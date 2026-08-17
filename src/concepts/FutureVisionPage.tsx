@@ -13,19 +13,23 @@ import {
   getFutureVisionFilterPatch,
 } from "@/src/data/futureVisionPresets"
 import { DEFAULT_FILTERS } from "@/src/hooks/useJobFilters"
+import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
 
 interface FutureVisionPageProps {
   filterState: UseJobFiltersReturn
   platform?: VersionBPlatform
+  locationChrome?: FutureVisionLocationChrome
 }
 
 function FutureVisionPreset({
   filterState,
   platform,
+  locationChrome,
 }: {
   filterState: UseJobFiltersReturn
   platform: VersionBPlatform
+  locationChrome: FutureVisionLocationChrome
 }) {
   const { applySearchQuery, replaceFilters, updateDraftSearch } = filterState
   const { locationSummary, locations, isMultiLocation, selectedLocationIndex } =
@@ -84,7 +88,7 @@ function FutureVisionPreset({
       >
         Skip to results
       </a>
-      <FutureVisionDesktop filterState={filterState} />
+      <FutureVisionDesktop filterState={filterState} locationChrome={locationChrome} />
     </VersionBRoot>
   )
 }
@@ -93,10 +97,15 @@ function FutureVisionPreset({
 export function FutureVisionPage({
   filterState,
   platform = "desktop",
+  locationChrome = "multi-pills",
 }: FutureVisionPageProps) {
   return (
     <FutureVisionLocationsProvider>
-      <FutureVisionPreset filterState={filterState} platform={platform} />
+      <FutureVisionPreset
+        filterState={filterState}
+        platform={platform}
+        locationChrome={locationChrome}
+      />
     </FutureVisionLocationsProvider>
   )
 }

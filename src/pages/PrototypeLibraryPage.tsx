@@ -4,7 +4,10 @@ import { IconChevronRight } from "@/components/braid/icons"
 import { cn } from "@/lib/utils"
 import { enterPrototype } from "@/src/hooks/useAppNavigation"
 import { DEFAULT_SEARCH } from "@/src/hooks/searchQuery"
-import { FUTURE_VISION_DEFAULT_SEARCH } from "@/src/data/futureVisionPresets"
+import {
+  FUTURE_VISION_DEFAULT_SEARCH,
+} from "@/src/data/futureVisionPresets"
+import { isFutureVisionConcept } from "@/src/concepts/index"
 import {
   folderItems,
   getFolderLabel,
@@ -116,14 +119,15 @@ export function PrototypeLibraryPage({
         onOpenFolder(item.id)
         return
       }
-      const search =
-        item.id === "future-vision" ? FUTURE_VISION_DEFAULT_SEARCH : DEFAULT_SEARCH
+      const search = isFutureVisionConcept(item.id)
+        ? FUTURE_VISION_DEFAULT_SEARCH
+        : DEFAULT_SEARCH
       enterPrototype(
         item.id,
         search,
         item.id === "version-b"
           ? { platform: "desktop", vbState: "default" }
-          : item.id === "future-vision"
+          : isFutureVisionConcept(item.id)
             ? { platform: "desktop" }
             : undefined,
       )

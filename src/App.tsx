@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react"
 import { useJobFilters } from "@/src/hooks/useJobFilters"
 import { useConceptParam } from "@/src/hooks/useConceptParam"
+import { isFutureVisionConcept } from "@/src/concepts/index"
 import { ConceptViewport } from "@/src/components/prototype/ConceptViewport"
 import { PrototypeChrome } from "@/src/components/prototype/PrototypeChrome"
 import { SeekHomePage, useSeekDocumentTitle } from "@/src/pages/SeekHomePage"
@@ -30,7 +31,7 @@ export default function App() {
   const { view, navigateToJobs, replaceJobsSearchInUrl } = useAppNavigation()
   const { folderId, openFolder, goToRoot } = useLibraryNavigation()
   const isVersionB = conceptId === "version-b"
-  const isFutureVision = conceptId === "future-vision"
+  const isFutureVision = isFutureVisionConcept(conceptId)
   const usesPlatformParam = isVersionB || isFutureVision
   const { platform, setPlatform } = useVersionBPlatformParam(usesPlatformParam)
   const { previewState } = useVersionBPreviewState(isVersionB)
@@ -43,7 +44,7 @@ export default function App() {
 
   useEffect(() => {
     if (!inPrototypeMode || view !== "jobs") return
-    if (conceptId === "future-vision" || conceptId === "version-b") return
+    if (isFutureVisionConcept(conceptId) || conceptId === "version-b") return
     const fromUrl = readSearchFromUrl()
     if (fromUrl.keywords || fromUrl.location) {
       applySearchQuery(fromUrl)

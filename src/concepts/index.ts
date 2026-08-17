@@ -6,6 +6,7 @@ import { VersionAPage } from "@/src/concepts/VersionAPage"
 import { VersionBPage } from "@/src/concepts/VersionBPage"
 import { FutureVisionPage } from "@/src/concepts/FutureVisionPage"
 import type { ConceptDef, ConceptPageProps } from "@/src/concepts/types"
+import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
 
 export const concepts: ConceptDef[] = [
   {
@@ -39,8 +40,18 @@ export const concepts: ConceptDef[] = [
     component: StrongApplicantFilterPage,
   },
   {
+    id: "tab-chips",
+    label: "Tab chips",
+    component: FutureVisionPage,
+  },
+  {
+    id: "multi-pills",
+    label: "Multi-pills",
+    component: FutureVisionPage,
+  },
+  {
     id: "future-vision",
-    label: "Future Vision",
+    label: "Multi-pills",
     component: FutureVisionPage,
   },
 ]
@@ -57,6 +68,16 @@ export function getConceptById(id: string): ConceptDef | undefined {
 
 export function getDefaultConceptId(): string {
   return concepts[0]?.id ?? "concept-1"
+}
+
+export function isFutureVisionConcept(id: string | null | undefined): boolean {
+  return id === "future-vision" || id === "tab-chips" || id === "multi-pills"
+}
+
+export function getFutureVisionLocationChrome(
+  id: string | null | undefined,
+): FutureVisionLocationChrome {
+  return id === "tab-chips" ? "tab-chips" : "multi-pills"
 }
 
 export type { ConceptPageProps, ConceptDef }

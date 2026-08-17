@@ -142,7 +142,7 @@ export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
             </button>
           </header>
 
-          <div className="border-b border-[#EAECF1] bg-white px-4 py-3">
+          <div className="border-b border-[#EAECF1] bg-white px-3 py-3">
             <FutureVisionFilterChips
               filterState={filterState}
               platform="app"

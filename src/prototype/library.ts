@@ -23,7 +23,7 @@ export const rootItems: LibraryItem[] = [
     type: "folder",
     id: "future-vision",
     label: "Future Vision",
-    description: "Multi-location search — one location default, chips when 2+",
+    description: "Multi-location search — Tab chips or Multi-pills",
   },
 ]
 
@@ -71,9 +71,15 @@ export const folderItems: Record<LibraryFolderId, LibraryItem[]> = {
   "future-vision": [
     {
       type: "prototype",
-      id: "future-vision",
-      label: "Future Vision",
-      description: "Multi-location SERP — desktop, mobile web & app",
+      id: "tab-chips",
+      label: "Tab chips",
+      description: "Hanging location tabs under the search band when 2+",
+    },
+    {
+      type: "prototype",
+      id: "multi-pills",
+      label: "Multi-pills",
+      description: "Selected locations as removable pills in the Where field",
     },
   ],
 }
@@ -85,7 +91,10 @@ export function getFolderForConcept(conceptId: string): LibraryFolderId | null {
   if (folderItems.delivery.some((item) => item.type === "prototype" && item.id === conceptId)) {
     return "delivery"
   }
-  if (folderItems["future-vision"].some((item) => item.type === "prototype" && item.id === conceptId)) {
+  if (
+    conceptId === "future-vision" ||
+    folderItems["future-vision"].some((item) => item.type === "prototype" && item.id === conceptId)
+  ) {
     return "future-vision"
   }
   return null

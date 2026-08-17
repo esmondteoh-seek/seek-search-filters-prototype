@@ -14,16 +14,21 @@ import { useFutureVisionSubmit } from "@/src/components/futureVision/useFutureVi
 import { useCompactSearchChrome } from "@/src/hooks/useCompactSearchChrome"
 import { useMobileSearchSheet } from "@/src/hooks/useMobileSearchSheet"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
+import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
 import { cn } from "@/lib/utils"
 
 interface FutureVisionDesktopProps {
   filterState: UseJobFiltersReturn
+  locationChrome?: FutureVisionLocationChrome
 }
 
 const SCROLL_COLLAPSE_DELTA = 8
 
-/** Future Vision desktop — flat navy band, multi-location chips when 2+ */
-export function FutureVisionDesktop({ filterState }: FutureVisionDesktopProps) {
+/** Future Vision desktop — tab chips or in-field location pills */
+export function FutureVisionDesktop({
+  filterState,
+  locationChrome = "multi-pills",
+}: FutureVisionDesktopProps) {
   const {
     compactChrome,
     headerInstant,
@@ -39,6 +44,7 @@ export function FutureVisionDesktop({ filterState }: FutureVisionDesktopProps) {
   const { open: mobileSearchOpen, openSheet, closeSheet } = useMobileSearchSheet(filterState)
   const { submitSearch, openSearchDraft } = useFutureVisionSubmit(filterState)
   const { isMultiLocation } = useFutureVisionLocations()
+  const showHangingTabs = locationChrome === "tab-chips"
 
   const compact = scrollCompact
   const hideSiteHeader = bandForceExpanded
@@ -101,26 +107,29 @@ export function FutureVisionDesktop({ filterState }: FutureVisionDesktopProps) {
               hideSiteHeader ? "top-0" : "top-16",
             )}
           >
-            <VersionBNavyBand className={cn(isMultiLocation && "pb-0")}>
+            <VersionBNavyBand className={cn(showHangingTabs && isMultiLocation && "pb-0")}>
               {bandExpanded ? (
                 <>
                   <FutureVisionSearchForm
                     filterState={filterState}
                     onSubmit={handleSubmit}
+                    locationChrome={locationChrome}
                   />
                   <FutureVisionFilterChips
                     filterState={filterState}
                     platform="desktop"
                     layout="expanded"
+                    includeLocationRow={showHangingTabs}
                   />
                 </>
               ) : (
-                <div className="flex min-w-0 flex-col gap-3">
+                <div className={cn("flex min-w-0", showHangingTabs && "flex-col gap-3")}>
                   <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto hide-scrollbar md:gap-3">
                     <FutureVisionSearchForm
                       filterState={filterState}
                       compact
                       onOpenSearch={openSearch}
+                      locationChrome={locationChrome}
                     />
                     <FutureVisionFilterChips
                       filterState={filterState}
@@ -130,7 +139,7 @@ export function FutureVisionDesktop({ filterState }: FutureVisionDesktopProps) {
                       includeLocationRow={false}
                     />
                   </div>
-                  {isMultiLocation ? (
+                  {showHangingTabs && isMultiLocation ? (
                     <FutureVisionLocationChips platform="desktop" />
                   ) : null}
                 </div>

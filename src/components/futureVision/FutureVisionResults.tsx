@@ -11,7 +11,7 @@ import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { Text } from "@/components/braid"
 import { cn } from "@/lib/utils"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
-import { getFutureVisionDisplayJobCount } from "@/src/data/futureVisionPresets"
+import { getFutureVisionScaledJobCount } from "@/src/data/futureVisionPresets"
 
 interface FutureVisionResultsProps {
   filterState: UseJobFiltersReturn
@@ -44,9 +44,10 @@ export function FutureVisionResults({
     filters,
     updateFilters,
     markNewToYouJobSeen,
+    search,
   } = filterState
 
-  const frameCount = getFutureVisionDisplayJobCount(platform)
+  const displayJobCount = getFutureVisionScaledJobCount(platform, filters, search)
   const isApp = platform === "app"
   const isMobileWeb = platform === "mobile-web"
   const { locations, selectedLocationIndex, isMultiLocation } = useFutureVisionLocations()
@@ -116,13 +117,32 @@ export function FutureVisionResults({
     strongApplicant: filters.strongApplicant,
   }
 
+  const resultsChrome = (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center justify-between gap-2">
+        <ResultsHeader count={displayJobCount} isLoading={isLoading} />
+        {!isApp ? (
+          <SortFilterPill
+            sort={filters.sort}
+            onSortChange={(sort) => updateFilters({ sort })}
+            variant="bar"
+            iconOnly
+            borderless
+            menuAlign="end"
+          />
+        ) : null}
+      </div>
+      <FutureVisionRadiusDropdown filterState={filterState} platform={platform} />
+    </div>
+  )
+
   return (
     <main
       id="results"
       className={cn(
         "pb-16",
         singleColumn
-          ? cn("px-4", resultsTopPadding)
+          ? cn(isMobileWeb ? "px-3" : "px-4", resultsTopPadding)
           : "mx-auto max-w-[1280px] px-4 md:px-0",
       )}
     >
@@ -134,20 +154,7 @@ export function FutureVisionResults({
             !isNarrow && "lg:w-[484px]",
           )}
         >
-          <div className="flex items-center justify-between gap-2">
-            <ResultsHeader count={frameCount} isLoading={isLoading} />
-            {!isApp ? (
-              <SortFilterPill
-                sort={filters.sort}
-                onSortChange={(sort) => updateFilters({ sort })}
-                variant="bar"
-                iconOnly
-                borderless
-                menuAlign="end"
-              />
-            ) : null}
-          </div>
-          <FutureVisionRadiusDropdown filterState={filterState} platform={platform} />
+          {resultsChrome}
           <div className="rounded-2xl border-2 border-[#EAECF1] bg-white p-12 text-center">
             <Text tone="secondary">No jobs match your search or filters.</Text>
           </div>
@@ -161,20 +168,7 @@ export function FutureVisionResults({
               !isNarrow && "lg:w-[484px] lg:shrink-0",
             )}
           >
-            <div className="flex items-center justify-between gap-2">
-              <ResultsHeader count={frameCount} isLoading={isLoading} />
-              {!isApp ? (
-                <SortFilterPill
-                  sort={filters.sort}
-                  onSortChange={(sort) => updateFilters({ sort })}
-                  variant="bar"
-                  iconOnly
-                  borderless
-                  menuAlign="end"
-                />
-              ) : null}
-            </div>
-            <FutureVisionRadiusDropdown filterState={filterState} platform={platform} />
+            {resultsChrome}
 
             <div className={cn("flex flex-col gap-4", singleColumn && "gap-3")}>
               {isLoading

@@ -6,7 +6,8 @@ import { FilterPopoverFooter } from "@/src/components/FilterBar/FilterPopoverFoo
 import { getDistanceDisplayLabel } from "@/src/components/FilterBar/filterControls"
 import { DISTANCE_FILTER_OPTIONS } from "@/src/data/jobs"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
-import { getFilteredJobs, type UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
+import { getFutureVisionScaledJobCount } from "@/src/data/futureVisionPresets"
+import { type UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { cn } from "@/lib/utils"
 
 interface FutureVisionRadiusDropdownProps {
@@ -29,8 +30,13 @@ export function FutureVisionRadiusDropdown({
   const distanceLabel = getDistanceDisplayLabel(appliedDistanceKm)
 
   const previewCount = useMemo(
-    () => getFilteredJobs({ ...filters, distanceKm: draftDistanceKm }, search).length,
-    [draftDistanceKm, filters, search],
+    () =>
+      getFutureVisionScaledJobCount(
+        platform,
+        { ...filters, distanceKm: draftDistanceKm },
+        search,
+      ),
+    [draftDistanceKm, filters, search, platform],
   )
 
   if (platform === "app" || !hasLocation) return null

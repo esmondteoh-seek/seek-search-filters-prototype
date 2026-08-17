@@ -20,6 +20,9 @@ import { cn } from "@/lib/utils"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
 import { FutureVisionLocationChips } from "@/src/components/futureVision/FutureVisionLocationChips"
 import { useFutureVisionLocations } from "@/src/components/futureVision/FutureVisionLocationsContext"
+import { getFutureVisionScaledJobCount } from "@/src/data/futureVisionPresets"
+import type { SearchQuery } from "@/src/hooks/searchQuery"
+import type { FilterState } from "@/src/hooks/useJobFilters"
 
 const navyChipTheme = {
   rounded: "rounded-full",
@@ -157,7 +160,13 @@ export function FutureVisionFilterChips({
   } = filterState
   const { isMultiLocation } = useFutureVisionLocations()
 
-  const popoverProps = { filters, search, onApplyFilters: applyFilters }
+  const popoverProps = {
+    filters,
+    search,
+    onApplyFilters: applyFilters,
+    mapJobCount: (draft: FilterState, draftSearch: SearchQuery) =>
+      getFutureVisionScaledJobCount(platform, draft, draftSearch),
+  }
   const appMode = platform === "app"
   const appliedCount = countModalFilters(filters)
 

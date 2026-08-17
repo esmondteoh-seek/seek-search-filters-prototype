@@ -35,6 +35,8 @@ interface FilterPillProps {
   search: SearchQuery
   /** Merge only the fields this pill changed onto the live filter state */
   onApplyFilters: (patch: Partial<FilterState>) => void
+  /** Optional transform for Apply footer job count (Future Vision marketplace scale) */
+  mapJobCount?: (draft: FilterState, search: SearchQuery) => number
 }
 
 function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
@@ -62,6 +64,7 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
     filters,
     search,
     onApplyFilters,
+    mapJobCount,
   },
   forwardedRef,
 ) {
@@ -112,7 +115,13 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
     setOpen(false)
   }
 
-  const previewCount = useMemo(() => getFilteredJobs(draft, search).length, [draft, search])
+  const previewCount = useMemo(
+    () =>
+      mapJobCount
+        ? mapJobCount(draft, search)
+        : getFilteredJobs(draft, search).length,
+    [mapJobCount, draft, search],
+  )
 
   const variantClasses = {
     navy: "h-10 rounded-full px-4 text-base",

@@ -1,4 +1,4 @@
-import { getConceptById } from "@/src/concepts/index"
+import { getConceptById, isFutureVisionConcept } from "@/src/concepts/index"
 import { getJobsPath } from "@/src/lib/appPaths"
 
 const FOLDER_PARAM = "folder"
@@ -23,7 +23,7 @@ export function applyShareConceptIfNeeded(): boolean {
   url.pathname = getJobsPath()
   url.searchParams.set("concept", shareId)
   if (
-    (shareId === "version-b" || shareId === "future-vision") &&
+    (shareId === "version-b" || isFutureVisionConcept(shareId)) &&
     !url.searchParams.get("platform")
   ) {
     url.searchParams.set("platform", "desktop")

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { concepts, getConceptById } from "@/src/concepts/index"
+import { concepts, getConceptById, getFutureVisionLocationChrome, isFutureVisionConcept } from "@/src/concepts/index"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
@@ -56,8 +56,12 @@ export function ConceptViewport({
           platform={renderedPlatform}
           previewState={renderedPreview}
         />
-      ) : renderedId === "future-vision" ? (
-        <FutureVisionPage filterState={filterState} platform={renderedPlatform} />
+      ) : isFutureVisionConcept(renderedId) ? (
+        <FutureVisionPage
+          filterState={filterState}
+          platform={renderedPlatform}
+          locationChrome={getFutureVisionLocationChrome(renderedId)}
+        />
       ) : (
         <Page filterState={filterState} />
       )}

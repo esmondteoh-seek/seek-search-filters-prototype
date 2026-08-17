@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
-import { getConceptById } from "@/src/concepts/index"
+import { getConceptById, isFutureVisionConcept } from "@/src/concepts/index"
 import { navigateToLibrary } from "@/src/hooks/useLibraryNavigation"
 import { getFolderForConcept } from "@/src/prototype/library"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
 import { useViewportBreakpoint } from "@/src/hooks/useViewportBreakpoint"
 import { buildShareUrl } from "@/src/hooks/shareEntry"
 import { useFutureVisionExplainability } from "@/src/components/futureVision/FutureVisionExplainability"
+import { useConceptParam } from "@/src/hooks/useConceptParam"
 
 const COLLAPSED_KEY = "seek-prototype-chrome-collapsed"
+
+const FV_CONCEPTS = [
+  { id: "tab-chips", label: "Tab chips" },
+  { id: "multi-pills", label: "Multi-pills" },
+] as const
 
 interface PrototypeChromeProps {
   conceptId: string
@@ -97,12 +103,14 @@ export function PrototypeChrome({
   const [copied, setCopied] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
+  const { setConceptId } = useConceptParam()
   const activeConcept = getConceptById(conceptId)
-  const isFutureVision = conceptId === "future-vision"
+  const isFutureVision = isFutureVisionConcept(conceptId)
   const explain = useFutureVisionExplainability()
   const showPlatformControls =
-    (conceptId === "version-b" || conceptId === "future-vision") && onPlatformChange
+    (conceptId === "version-b" || isFutureVision) && onPlatformChange
   const activePlatform = PLATFORMS.find((p) => p.value === platform) ?? PLATFORMS[0]
+  const activeFvConceptId = conceptId === "tab-chips" ? "tab-chips" : "multi-pills"
 
   useEffect(() => {
     sessionStorage.setItem(COLLAPSED_KEY, collapsed ? "1" : "0")
@@ -116,7 +124,7 @@ export function PrototypeChrome({
   const handleCopyShareLink = useCallback(async () => {
     const shareUrl = buildShareUrl(
       conceptId,
-      conceptId === "version-b" || conceptId === "future-vision" ? platform : undefined,
+      conceptId === "version-b" || isFutureVisionConcept(conceptId) ? platform : undefined,
     )
     try {
       await navigator.clipboard.writeText(shareUrl)
@@ -201,6 +209,40 @@ export function PrototypeChrome({
                       <span className="sm:hidden">{shortLabel}</span>
                       <span className="hidden sm:inline">{label}</span>
                     </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ) : null}
+
+        {isFutureVision ? (
+          <div className="flex flex-col gap-1.5">
+            <span className="px-1 text-[10px] font-semibold uppercase tracking-wide text-white/50">
+              Concept
+            </span>
+            <div
+              className="grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1"
+              role="group"
+              aria-label="Future Vision concept"
+            >
+              {FV_CONCEPTS.map(({ id, label }) => {
+                const active = activeFvConceptId === id
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setConceptId(id)}
+                    className={cn(
+                      "rounded-lg px-2 py-2 text-[11px] font-semibold transition-colors",
+                      "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a2e]",
+                      active
+                        ? "bg-white text-[#1a1a2e] shadow-sm"
+                        : "text-white/75 hover:bg-white/10 hover:text-white",
+                    )}
+                  >
+                    {label}
                   </button>
                 )
               })}

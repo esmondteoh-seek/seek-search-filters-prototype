@@ -77,6 +77,11 @@ export function getFilteredJobs(filters: FilterState, search: SearchQuery = DEFA
   return ensureMinimumSearchResults(jobs, filters, search, strict)
 }
 
+/** Strict matcher count — no minimum-result padding */
+export function countMatchingJobs(filters: FilterState, search: SearchQuery = DEFAULT_SEARCH): number {
+  return filterJobs(jobs, filters, search).length
+}
+
 /** Prototype floor — every SERP shows at least this many job cards */
 const MIN_SEARCH_RESULTS = 30
 

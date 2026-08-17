@@ -12,8 +12,10 @@ interface FutureVisionLocationFieldProps {
   onSubmit?: () => void
   className?: string
   inputClassName?: string
-  /** Include outer white field chrome (desktop band / mobile overlay) */
+  /** In-field pills + rest summary (overlay / desktop Where) */
   withFieldChrome?: boolean
+  /** Focus ring offset against navy band vs overlay sheet */
+  focusRingOffset?: "navy" | "overlay"
 }
 
 function highlightProduction(text: string, query: string): React.ReactNode {
@@ -60,6 +62,7 @@ export function FutureVisionLocationField({
   className,
   inputClassName,
   withFieldChrome = false,
+  focusRingOffset,
 }: FutureVisionLocationFieldProps) {
   const listboxId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -83,6 +86,10 @@ export function FutureVisionLocationField({
   const locationCount = locations.length
   const locationCountLabel = `${locationCount} locations`
   const overlayPillMode = withFieldChrome
+  const ringOffsetClass =
+    (focusRingOffset ?? (withFieldChrome ? "overlay" : "navy")) === "navy"
+      ? "focus-within:ring-offset-[#051A49]"
+      : "focus-within:ring-offset-[#2E3849]"
   const overlayShowRest =
     overlayPillMode && !fieldFocused && !isEditingLocation && locationCount > 0
   const overlayShowPills = overlayPillMode && (fieldFocused || isEditingLocation)
@@ -294,7 +301,7 @@ export function FutureVisionLocationField({
         className={cn(
           fieldChromeBase,
           overlayPillMode ? (overlayShowRest ? "h-12 items-center" : "min-h-12 items-start") : "h-12",
-          withFieldChrome ? "focus-within:ring-offset-[#2E3849]" : "focus-within:ring-offset-[#051A49]",
+          ringOffsetClass,
         )}
       >
         {fieldInner}

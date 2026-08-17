@@ -122,7 +122,7 @@ function LocationTab({ label, selected, onSelect, onRemove, platform }: Location
         className={cn(
           "flex h-9 max-w-[min(100%,280px)] shrink-0 items-center gap-1.5 rounded-full px-3 text-sm",
           selected
-            ? "border border-[#2E3849] bg-white text-[#2E3849]"
+            ? "border border-[#2455C9] bg-[#2455C9] text-white"
             : "border border-[#EAECF1] bg-[#F0F2F5] text-[#2E3849]",
         )}
       >
@@ -133,7 +133,10 @@ function LocationTab({ label, selected, onSelect, onRemove, platform }: Location
           aria-pressed={selected}
           aria-label={`Location: ${label}`}
         >
-          <IconLocation className="h-4 w-4 shrink-0 text-[#5A6881]" aria-hidden />
+          <IconLocation
+            className={cn("h-4 w-4 shrink-0", selected ? "text-white" : "text-[#5A6881]")}
+            aria-hidden
+          />
           <span className="min-w-0 truncate">{label}</span>
         </button>
         <button
@@ -142,7 +145,12 @@ function LocationTab({ label, selected, onSelect, onRemove, platform }: Location
             e.stopPropagation()
             onRemove()
           }}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[#697586] hover:bg-[#EAECF1] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1E47A9]"
+          className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1E47A9]",
+            selected
+              ? "text-white/90 hover:bg-white/10"
+              : "text-[#697586] hover:bg-[#EAECF1]",
+          )}
           aria-label={`Remove ${label}`}
         >
           <IconClose className="h-4 w-4" aria-hidden />

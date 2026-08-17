@@ -15,6 +15,7 @@
     "release": "npx @seek/static-site-deploy release",
     "release:ssd": "bash scripts/release-ssd.sh",
     "setup:github-pages": "bash scripts/setup-github-pages.sh",
+    "release:pages": "bash scripts/release-pages.sh",
     "url": "npx @seek/static-site-deploy url"
   },
   "dependencies": {

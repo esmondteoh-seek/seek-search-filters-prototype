@@ -2,7 +2,10 @@ import { IconSearch } from "@/components/braid/icons"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
 import { FutureVisionLocationField } from "@/src/components/futureVision/FutureVisionLocationField"
 import { useFutureVisionLocations } from "@/src/components/futureVision/FutureVisionLocationsContext"
-import { formatFutureVisionCompactPill } from "@/src/data/futureVisionPresets"
+import {
+  formatFutureVisionCompactPill,
+  type FutureVisionLocationChrome,
+} from "@/src/data/futureVisionPresets"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
 import { cn } from "@/lib/utils"
@@ -12,6 +15,7 @@ interface FutureVisionSearchFormProps {
   compact?: boolean
   onOpenSearch?: () => void
   onSubmit?: () => void
+  locationChrome?: FutureVisionLocationChrome
 }
 
 /** Future Vision search — location summary reflects 1 vs N locations */
@@ -20,6 +24,7 @@ export function FutureVisionSearchForm({
   compact = false,
   onOpenSearch,
   onSubmit,
+  locationChrome = "multi-pills",
 }: FutureVisionSearchFormProps) {
   const { draftSearch, updateDraftSearch, search } = filterState
   const { locations } = useFutureVisionLocations()
@@ -70,7 +75,12 @@ export function FutureVisionSearchForm({
       </label>
 
       <div className="relative w-[min(353px,32vw)] shrink-0">
-        <FutureVisionLocationField onSubmit={onSubmit} className="min-w-0 flex-1" />
+        <FutureVisionLocationField
+          onSubmit={onSubmit}
+          className="min-w-0 flex-1"
+          withFieldChrome={locationChrome === "multi-pills"}
+          focusRingOffset="navy"
+        />
       </div>
 
       <button

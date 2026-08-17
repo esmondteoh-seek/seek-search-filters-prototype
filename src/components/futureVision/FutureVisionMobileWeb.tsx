@@ -59,7 +59,7 @@ export function FutureVisionMobileWeb({ filterState }: FutureVisionMobileWebProp
 
       {!hideSearchChrome ? (
         <div className="shrink-0">
-          <VersionBNavyBand className={cn("min-w-0 px-4 py-4", showLocations && "pb-0")}>
+          <VersionBNavyBand className={cn("min-w-0 px-3 py-4", showLocations && "pb-0")}>
             <FutureVisionMobileSearchPill label={pillLabel} onOpen={handleOpenSheet} />
             <FutureVisionFilterChips
               filterState={filterState}
