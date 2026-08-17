@@ -16,12 +16,14 @@ import {
   type FutureVisionLocation,
 } from "@/src/data/futureVisionLocations"
 import { formatFutureVisionLocationSummaryFromIds } from "@/src/data/futureVisionPresets"
+import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
 
 interface FutureVisionLocationsContextValue {
   locationIds: string[]
   locations: string[]
   isMultiLocation: boolean
   locationSummary: string
+  locationChrome: FutureVisionLocationChrome
   selectedLocationIndex: number
   locationQuery: string
   isEditingLocation: boolean
@@ -49,7 +51,13 @@ function mergeLocationIds(existing: string[], incoming: string[]): string[] {
   return merged
 }
 
-export function FutureVisionLocationsProvider({ children }: { children: ReactNode }) {
+export function FutureVisionLocationsProvider({
+  children,
+  locationChrome = "multi-pills",
+}: {
+  children: ReactNode
+  locationChrome?: FutureVisionLocationChrome
+}) {
   const [locationIds, setLocationIdsState] = useState<string[]>([FUTURE_VISION_DEFAULT_LOCATION_ID])
   const [selectedLocationIndex, setSelectedLocationIndex] = useState(0)
   const [locationQuery, setLocationQuery] = useState("")
@@ -157,6 +165,7 @@ export function FutureVisionLocationsProvider({ children }: { children: ReactNod
       locations,
       isMultiLocation,
       locationSummary,
+      locationChrome,
       selectedLocationIndex,
       locationQuery,
       isEditingLocation,
@@ -176,6 +185,7 @@ export function FutureVisionLocationsProvider({ children }: { children: ReactNod
       locations,
       isMultiLocation,
       locationSummary,
+      locationChrome,
       selectedLocationIndex,
       locationQuery,
       isEditingLocation,

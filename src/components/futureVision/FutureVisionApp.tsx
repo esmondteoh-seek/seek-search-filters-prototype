@@ -17,7 +17,7 @@ import { useFutureVisionSubmit } from "@/src/components/futureVision/useFutureVi
 import { PhoneFrame } from "@/src/components/shared/PhoneFrame"
 import { useHideOnScrollDown } from "@/src/hooks/useHideOnScrollDown"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
-import { getFilteredJobs } from "@/src/hooks/useJobFilters"
+import { getFilteredJobs, countModalFilters } from "@/src/hooks/useJobFilters"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
 import { cn } from "@/lib/utils"
 
@@ -25,9 +25,7 @@ interface FutureVisionAppProps {
   filterState: UseJobFiltersReturn
 }
 
-const APP_FILTER_BADGE = 5
-
-/** Future Vision native app — location chips when multi, fixed filter badge */
+/** Future Vision native app — location chips when multi, filter dot when standard filters applied */
 export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
   const { search, filters, mobileDetailOpen, closeMobileDetail, bookmarkedIds, toggleBookmark } =
     filterState
@@ -67,6 +65,9 @@ export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
     () => displayJobs.find((j) => j.id === selectedId) ?? null,
     [displayJobs, selectedId],
   )
+
+  const appliedFilterCount = countModalFilters(filters)
+  const showFilterDot = appliedFilterCount > 0
 
   const handleOpenSheet = () => {
     reveal()
@@ -130,15 +131,20 @@ export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
               type="button"
               onClick={handleOpenSheet}
               className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#2E3849] hover:bg-[#F5F7FA]"
-              aria-label={`Filters, ${APP_FILTER_BADGE} applied`}
+              aria-label={
+                showFilterDot
+                  ? `Filters, ${appliedFilterCount} applied`
+                  : "Filters"
+              }
             >
               <IconFilter className="h-5 w-5" aria-hidden />
-              <span
-                className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none text-white"
-                style={{ backgroundColor: VERSION_B_TOKENS.band }}
-              >
-                {APP_FILTER_BADGE}
-              </span>
+              {showFilterDot ? (
+                <span
+                  className="absolute right-1.5 top-1.5 size-2.5 rounded-full"
+                  style={{ backgroundColor: VERSION_B_TOKENS.formAccent }}
+                  aria-hidden
+                />
+              ) : null}
             </button>
           </header>
 

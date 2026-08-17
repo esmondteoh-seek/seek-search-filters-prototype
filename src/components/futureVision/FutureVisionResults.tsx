@@ -12,6 +12,7 @@ import { Text } from "@/components/braid"
 import { cn } from "@/lib/utils"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
 import { getFutureVisionScaledJobCount } from "@/src/data/futureVisionPresets"
+import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
 
 interface FutureVisionResultsProps {
   filterState: UseJobFiltersReturn
@@ -20,6 +21,7 @@ interface FutureVisionResultsProps {
   forceSplit?: boolean
   singleColumn?: boolean
   onJobSelect?: (jobId: string) => void
+  locationChrome?: FutureVisionLocationChrome
 }
 
 /** Future Vision results — frame counts, 50 km line, Version B job cards */
@@ -30,6 +32,7 @@ export function FutureVisionResults({
   forceSplit = false,
   singleColumn = false,
   onJobSelect,
+  locationChrome = "multi-pills",
 }: FutureVisionResultsProps) {
   const {
     filteredJobs,
@@ -132,7 +135,11 @@ export function FutureVisionResults({
           />
         ) : null}
       </div>
-      <FutureVisionRadiusDropdown filterState={filterState} platform={platform} />
+      <FutureVisionRadiusDropdown
+        filterState={filterState}
+        platform={platform}
+        locationChrome={locationChrome}
+      />
     </div>
   )
 
@@ -142,7 +149,7 @@ export function FutureVisionResults({
       className={cn(
         "pb-16",
         singleColumn
-          ? cn(isMobileWeb ? "px-3" : "px-4", resultsTopPadding)
+          ? cn(isMobileWeb ? "px-5" : "px-4", resultsTopPadding)
           : "mx-auto max-w-[1280px] px-4 md:px-0",
       )}
     >

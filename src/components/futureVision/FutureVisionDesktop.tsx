@@ -176,6 +176,7 @@ export function FutureVisionDesktop({
           platform="desktop"
           stickyTop={stickyTop}
           forceSplit
+          locationChrome={locationChrome}
         />
       </div>
 

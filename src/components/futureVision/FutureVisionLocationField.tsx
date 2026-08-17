@@ -279,7 +279,6 @@ export function FutureVisionLocationField({
       className={cn(
         "search-input-no-clear min-w-0 bg-transparent text-base text-[#2E3849] outline-none placeholder:text-[#5A6881]",
         overlayPillMode ? "min-w-0 flex-1" : "min-w-0 flex-1",
-        pillsInField && "min-w-[8rem]",
         showSummary && "cursor-pointer",
         inputClassName,
       )}
@@ -358,8 +357,8 @@ export function FutureVisionLocationField({
       </>
     ) : (
       <>
-        <IconLocation className="h-5 w-5 shrink-0 self-start pt-2.5 text-[#5A6881]" aria-hidden />
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 py-2">
+        <IconLocation className="h-5 w-5 shrink-0 text-[#5A6881]" aria-hidden />
+        <div className="flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto hide-scrollbar">
           {overlayShowPills
             ? locations.map((label, index) => (
                 <LocationPill
@@ -376,7 +375,6 @@ export function FutureVisionLocationField({
           visible={showFieldClear}
           onClear={handleClearAll}
           label="Clear all locations"
-          className="self-start pt-2.5"
         />
       </>
     )
@@ -397,9 +395,7 @@ export function FutureVisionLocationField({
       <div
         className={cn(
           fieldChromeBase,
-          pillsInDropdown || overlayShowRest || !overlayPillMode
-            ? "h-12 items-center"
-            : "min-h-12 items-start",
+          "h-12 items-center",
           ringOffsetClass,
         )}
       >

@@ -15,14 +15,19 @@ import { useMobileSearchSheet } from "@/src/hooks/useMobileSearchSheet"
 import { useHideOnScrollDown } from "@/src/hooks/useHideOnScrollDown"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { formatFutureVisionCompactPill } from "@/src/data/futureVisionPresets"
+import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
 import { cn } from "@/lib/utils"
 
 interface FutureVisionMobileWebProps {
   filterState: UseJobFiltersReturn
+  locationChrome?: FutureVisionLocationChrome
 }
 
 /** Future Vision mobile web — phone shell, navy band, location chips when multi */
-export function FutureVisionMobileWeb({ filterState }: FutureVisionMobileWebProps) {
+export function FutureVisionMobileWeb({
+  filterState,
+  locationChrome = "multi-pills",
+}: FutureVisionMobileWebProps) {
   const { mobileDetailOpen, search } = filterState
   const { locations, isMultiLocation } = useFutureVisionLocations()
   const hideSearchChrome = mobileDetailOpen
@@ -30,6 +35,7 @@ export function FutureVisionMobileWeb({ filterState }: FutureVisionMobileWebProp
   const { submitSearch, openSearchDraft } = useFutureVisionSubmit(filterState)
   const pillLabel = formatFutureVisionCompactPill(search.keywords, locations)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const showHangingTabs = locationChrome === "tab-chips"
   const { hidden: locationsHidden, reveal, instant } = useHideOnScrollDown(scrollRef, {
     forceVisible: mobileSearchOpen,
     enabled: isMultiLocation && !hideSearchChrome,
@@ -59,13 +65,20 @@ export function FutureVisionMobileWeb({ filterState }: FutureVisionMobileWebProp
 
       {!hideSearchChrome ? (
         <div className="shrink-0">
-          <VersionBNavyBand className={cn("min-w-0 px-3 py-4", showLocations && "pb-0")}>
+          <VersionBNavyBand
+            className="min-w-0 px-0 py-0 md:px-0"
+            contentClassName={cn(
+              "px-5 pt-5",
+              showHangingTabs && showLocations ? "pb-0" : "pb-4",
+            )}
+          >
             <FutureVisionMobileSearchPill label={pillLabel} onOpen={handleOpenSheet} />
             <FutureVisionFilterChips
               filterState={filterState}
               platform="mobile-web"
               layout="inline"
               onMoreClick={handleOpenSheet}
+              includeLocationRow={showHangingTabs}
               hideLocationRow={locationsHidden}
               locationRowInstant={instant}
             />
@@ -82,6 +95,7 @@ export function FutureVisionMobileWeb({ filterState }: FutureVisionMobileWebProp
           filterState={filterState}
           platform="mobile-web"
           singleColumn
+          locationChrome={locationChrome}
         />
       </div>
 

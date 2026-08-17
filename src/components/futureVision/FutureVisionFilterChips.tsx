@@ -27,7 +27,7 @@ import type { FilterState } from "@/src/hooks/useJobFilters"
 const navyChipTheme = {
   rounded: "rounded-full",
   activeBg: "bg-[#2455C9]",
-  inactiveBorder: "border-2 border-white/50",
+  inactiveBorder: "border border-white/50",
   inactiveBg: "bg-transparent",
   textActive: "text-white focus-visible:ring-white focus-visible:ring-offset-[#051A49]",
   textInactive: "text-white hover:bg-white/5 focus-visible:ring-white focus-visible:ring-offset-[#051A49]",
@@ -168,6 +168,7 @@ export function FutureVisionFilterChips({
       getFutureVisionScaledJobCount(platform, draft, draftSearch),
   }
   const appMode = platform === "app"
+  const mobileWebInline = platform === "mobile-web" && layout === "inline"
   const appliedCount = countModalFilters(filters)
 
   const personalised = (
@@ -265,7 +266,7 @@ export function FutureVisionFilterChips({
         )}
       >
         <div className="min-h-0 overflow-hidden">
-          <div className="min-h-0 overflow-hidden pt-2">
+          <div className={cn("min-h-0 overflow-hidden", appMode ? "pt-0" : "pt-2")}>
             <FutureVisionLocationChips platform={platform} />
           </div>
         </div>
@@ -286,7 +287,7 @@ export function FutureVisionFilterChips({
 
   if (appMode) {
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
         <div className="flex min-w-0 items-center gap-3 overflow-x-auto hide-scrollbar">
           {personalised}
         </div>
@@ -297,8 +298,11 @@ export function FutureVisionFilterChips({
 
   const inlineRow = (
     <div
-      className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto hide-scrollbar"
-      style={{ WebkitOverflowScrolling: "touch" }}
+      className={cn(
+        "flex min-w-0 items-center gap-2",
+        mobileWebInline ? "flex-wrap" : "flex-nowrap overflow-x-auto hide-scrollbar",
+      )}
+      style={mobileWebInline ? undefined : { WebkitOverflowScrolling: "touch" }}
     >
       {personalised}
       <MoreChip appliedCount={appliedCount} onClick={onMoreClick} />

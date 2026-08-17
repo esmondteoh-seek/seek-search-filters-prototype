@@ -8,21 +8,25 @@ import { getDistanceDisplayLabel } from "@/src/components/FilterBar/filterContro
 import { DISTANCE_FILTER_OPTIONS } from "@/src/data/jobs"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
 import { getFutureVisionScaledJobCount } from "@/src/data/futureVisionPresets"
+import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
 import { type UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { cn } from "@/lib/utils"
 
 interface FutureVisionRadiusDropdownProps {
   filterState: UseJobFiltersReturn
   platform: VersionBPlatform
+  locationChrome?: FutureVisionLocationChrome
 }
 
 /** Results radius control — location pin, listed places, radio list, SEEK preview footer */
 export function FutureVisionRadiusDropdown({
   filterState,
   platform,
+  locationChrome: locationChromeProp,
 }: FutureVisionRadiusDropdownProps) {
   const { filters, search, applyFilters } = filterState
-  const { locations } = useFutureVisionLocations()
+  const { locations, locationChrome: locationChromeFromContext } = useFutureVisionLocations()
+  const locationChrome = locationChromeProp ?? locationChromeFromContext
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const [draftDistanceKm, setDraftDistanceKm] = useState(filters.distanceKm)
@@ -31,6 +35,10 @@ export function FutureVisionRadiusDropdown({
   const hasDraftChanges = draftDistanceKm !== appliedDistanceKm
   const distanceLabel = getDistanceDisplayLabel(appliedDistanceKm)
   const locationLabel = locations.join(", ")
+  const listLocations = locationChrome === "multi-pills"
+  const ariaLabel = listLocations
+    ? `Showing jobs within ${distanceLabel} of ${locationLabel}. Change distance.`
+    : `Showing jobs within ${distanceLabel}. Change distance.`
 
   const previewCount = useMemo(
     () =>
@@ -76,7 +84,7 @@ export function FutureVisionRadiusDropdown({
         type="button"
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={`Showing jobs within ${distanceLabel} of ${locationLabel}. Change distance.`}
+        aria-label={ariaLabel}
         onClick={() => (open ? handleClose() : handleOpen())}
         className={cn(
           "inline-flex items-start gap-2 text-left text-sm leading-snug text-[#2E3849]",
@@ -99,8 +107,12 @@ export function FutureVisionRadiusDropdown({
               aria-hidden
             />
           </span>
-          {" of "}
-          {locationLabel}
+          {listLocations ? (
+            <>
+              {" of "}
+              {locationLabel}
+            </>
+          ) : null}
         </Text>
       </button>
 

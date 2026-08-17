@@ -256,13 +256,28 @@ export function VersionBFilterChips({
 }
 
 /** Flat navy band wrapper */
-export function VersionBNavyBand({ children, className }: { children: React.ReactNode; className?: string }) {
+export function VersionBNavyBand({
+  children,
+  className,
+  contentClassName,
+}: {
+  children: React.ReactNode
+  className?: string
+  contentClassName?: string
+}) {
   return (
     <section
       className={cn("relative px-4 py-4 md:px-0", className)}
       style={{ backgroundColor: VERSION_B_TOKENS.band }}
     >
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-3 md:gap-4">{children}</div>
+      <div
+        className={cn(
+          "mx-auto flex max-w-[1280px] flex-col gap-3 md:gap-4",
+          contentClassName,
+        )}
+      >
+        {children}
+      </div>
     </section>
   )
 }

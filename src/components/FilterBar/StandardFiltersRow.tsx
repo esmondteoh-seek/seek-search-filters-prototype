@@ -24,6 +24,8 @@ interface StandardFiltersRowProps {
   compactLabels?: boolean
   /** Append the round icon-only sort button after the pills (Concept 1 — Figma 4166:27330) */
   showSort?: boolean
+  /** Wrap pills onto multiple lines instead of horizontal scroll + fade */
+  wrap?: boolean
   className?: string
 }
 
@@ -40,6 +42,7 @@ export function StandardFiltersRow({
   inline = false,
   compactLabels = false,
   showSort = false,
+  wrap = false,
   className,
 }: StandardFiltersRowProps) {
   const { filters, clearFilter, updateFilters } = filterState
@@ -60,13 +63,15 @@ export function StandardFiltersRow({
     <div className={cn(className, inline && "min-w-0 flex-1")}>
       <div
         className={cn(
-          inline
-            ? "flex min-w-0 flex-1 items-center gap-3 overflow-x-auto hide-scrollbar filter-scroll-fade-right"
-            : isMobile
-              ? "flex gap-2 overflow-x-auto hide-scrollbar pb-0.5 filter-scroll-fade-right"
-              : "flex flex-wrap items-center gap-3",
+          wrap
+            ? "flex flex-wrap items-center gap-2"
+            : inline
+              ? "flex min-w-0 flex-1 items-center gap-3 overflow-x-auto hide-scrollbar filter-scroll-fade-right"
+              : isMobile
+                ? "flex gap-2 overflow-x-auto hide-scrollbar pb-0.5 filter-scroll-fade-right"
+                : "flex flex-wrap items-center gap-3",
         )}
-        style={inline || isMobile ? { WebkitOverflowScrolling: "touch" } : undefined}
+        style={!wrap && (inline || isMobile) ? { WebkitOverflowScrolling: "touch" } : undefined}
       >
         <FilterPill
           label="Pay"

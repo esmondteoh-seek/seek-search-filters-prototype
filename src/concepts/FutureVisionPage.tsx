@@ -75,7 +75,7 @@ function FutureVisionPreset({
   if (platform === "mobile-web") {
     return (
       <VersionBRoot className="bg-[#E8ECF2]">
-        <FutureVisionMobileWeb filterState={filterState} />
+        <FutureVisionMobileWeb filterState={filterState} locationChrome={locationChrome} />
       </VersionBRoot>
     )
   }
@@ -100,7 +100,7 @@ export function FutureVisionPage({
   locationChrome = "multi-pills",
 }: FutureVisionPageProps) {
   return (
-    <FutureVisionLocationsProvider>
+    <FutureVisionLocationsProvider locationChrome={locationChrome}>
       <FutureVisionPreset
         filterState={filterState}
         platform={platform}

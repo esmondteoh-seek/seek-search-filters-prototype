@@ -7,6 +7,8 @@ import {
   IconSearch,
 } from "@/components/braid/icons"
 import { FutureVisionLocationField } from "@/src/components/futureVision/FutureVisionLocationField"
+import { useFutureVisionLocations } from "@/src/components/futureVision/FutureVisionLocationsContext"
+import { LocationRadiusDropdown } from "@/src/components/FilterBar/LocationRadiusDropdown"
 import { StandardFiltersRow } from "@/src/components/FilterBar/StandardFiltersRow"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
 import { LAST_SEARCH, SAVED_SEARCHES, type SavedSearchItem } from "@/src/data/savedSearches"
@@ -68,6 +70,8 @@ export function FutureVisionMobileSearchSheet({
     updateDraftSearch,
     submitSearch,
   } = filterState
+  const { locations } = useFutureVisionLocations()
+  const showRadius = locations.length > 0
 
   const keywordRef = useRef<HTMLInputElement>(null)
 
@@ -146,9 +150,28 @@ export function FutureVisionMobileSearchSheet({
               />
             </label>
 
-            <FutureVisionLocationField onSubmit={handleSeek} withFieldChrome />
+            <div className="flex flex-nowrap items-start gap-2">
+              <FutureVisionLocationField
+                onSubmit={handleSeek}
+                withFieldChrome
+                className="min-w-0 flex-1"
+              />
+              {showRadius ? (
+                <div className="h-12 shrink-0 self-start">
+                  <LocationRadiusDropdown
+                    filterState={filterState}
+                    forceVisible
+                  />
+                </div>
+              ) : null}
+            </div>
 
-            <StandardFiltersRow filterState={filterState} variant="compact" className="mt-6" />
+            <StandardFiltersRow
+              filterState={filterState}
+              variant="compact"
+              wrap
+              className="mt-6"
+            />
           </div>
 
           <div className="flex flex-col gap-2">

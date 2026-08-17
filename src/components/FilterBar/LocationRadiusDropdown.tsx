@@ -6,13 +6,19 @@ import { cn } from "@/lib/utils"
 interface LocationRadiusDropdownProps {
   filterState: UseJobFiltersReturn
   className?: string
+  /** Show when Future Vision has locations but search.location is empty (multi-location) */
+  forceVisible?: boolean
 }
 
 /** Location radius beside the Where search field — white search-bar style (Figma 4166) */
-export function LocationRadiusDropdown({ filterState, className }: LocationRadiusDropdownProps) {
+export function LocationRadiusDropdown({
+  filterState,
+  className,
+  forceVisible = false,
+}: LocationRadiusDropdownProps) {
   const { filters, hasLocation, applyFilters, search } = filterState
 
-  if (!hasLocation) return null
+  if (!hasLocation && !forceVisible) return null
 
   return (
     <FilterPill
@@ -23,7 +29,7 @@ export function LocationRadiusDropdown({ filterState, className }: LocationRadiu
       popoverTitle="Distance"
       popoverWidth={360}
       variant="search"
-      className={cn("w-[120px] shrink-0", className)}
+      className={cn("w-[104px] shrink-0 rounded-xl", className)}
       filters={filters}
       search={search}
       onApplyFilters={applyFilters}
