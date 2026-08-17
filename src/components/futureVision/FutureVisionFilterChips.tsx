@@ -295,15 +295,21 @@ export function FutureVisionFilterChips({
     )
   }
 
+  const inlineRow = (
+    <div
+      className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto hide-scrollbar"
+      style={{ WebkitOverflowScrolling: "touch" }}
+    >
+      {personalised}
+      <MoreChip appliedCount={appliedCount} onClick={onMoreClick} />
+    </div>
+  )
+
+  if (!locationRow) return inlineRow
+
   return (
     <div className="flex flex-col gap-3">
-      <div
-        className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto hide-scrollbar"
-        style={{ WebkitOverflowScrolling: "touch" }}
-      >
-        {personalised}
-        <MoreChip appliedCount={appliedCount} onClick={onMoreClick} />
-      </div>
+      {inlineRow}
       {locationRow}
     </div>
   )

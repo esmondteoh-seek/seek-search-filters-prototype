@@ -35,6 +35,7 @@ export function FutureVisionDesktop({
     compact: scrollCompact,
     filterBlockRef,
     hasPageScrolled,
+    isFilterBlockStuck,
     stickyTop,
   } = useCompactSearchChrome("filter-sticky-sentinel-fv")
 
@@ -43,8 +44,13 @@ export function FutureVisionDesktop({
   const [bandForceExpanded, setBandForceExpanded] = useState(false)
   const { open: mobileSearchOpen, openSheet, closeSheet } = useMobileSearchSheet(filterState)
   const { submitSearch, openSearchDraft } = useFutureVisionSubmit(filterState)
-  const { isMultiLocation } = useFutureVisionLocations()
+  const {
+    isMultiLocation,
+    stopEditingLocation,
+    setLocationQuery,
+  } = useFutureVisionLocations()
   const showHangingTabs = locationChrome === "tab-chips"
+  const isMultiPills = locationChrome === "multi-pills"
 
   const compact = scrollCompact
   const hideSiteHeader = bandForceExpanded
@@ -65,16 +71,22 @@ export function FutureVisionDesktop({
     let lastScrollY = window.scrollY
     const onScroll = () => {
       const y = window.scrollY
-      if (y - lastScrollY > SCROLL_COLLAPSE_DELTA) setBandForceExpanded(false)
+      if (y - lastScrollY > SCROLL_COLLAPSE_DELTA) {
+        setBandForceExpanded(false)
+        stopEditingLocation()
+        setLocationQuery("")
+      }
       lastScrollY = y
     }
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
-  }, [bandForceExpanded])
+  }, [bandForceExpanded, stopEditingLocation, setLocationQuery])
 
   const openSearch = () => {
     openSearchDraft()
     if (compact) {
+      stopEditingLocation()
+      setLocationQuery("")
       setBandForceExpanded(true)
       return
     }
@@ -105,6 +117,8 @@ export function FutureVisionDesktop({
             className={cn(
               "sticky z-40 min-w-0",
               hideSiteHeader ? "top-0" : "top-16",
+              (isFilterBlockStuck || bandForceExpanded) && "shadow-md",
+              bandExpanded && "overflow-visible",
             )}
           >
             <VersionBNavyBand className={cn(showHangingTabs && isMultiLocation && "pb-0")}>
@@ -124,7 +138,14 @@ export function FutureVisionDesktop({
                 </>
               ) : (
                 <div className={cn("flex min-w-0", showHangingTabs && "flex-col gap-3")}>
-                  <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto hide-scrollbar md:gap-3">
+                  <div
+                    className={cn(
+                      "flex min-w-0 items-center gap-2 md:gap-3",
+                      isMultiPills
+                        ? "flex-nowrap overflow-x-auto hide-scrollbar"
+                        : "flex-wrap md:flex-nowrap",
+                    )}
+                  >
                     <FutureVisionSearchForm
                       filterState={filterState}
                       compact

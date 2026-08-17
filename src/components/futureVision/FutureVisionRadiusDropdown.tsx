@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react"
 import { RadioGroup, RadioItem, Strong, Text } from "@/components/braid"
-import { IconChevronDown, IconJob } from "@/components/braid/icons"
+import { IconChevronDown, IconLocation } from "@/components/braid/icons"
+import { useFutureVisionLocations } from "@/src/components/futureVision/FutureVisionLocationsContext"
 import { FilterPopover } from "@/src/components/FilterBar/FilterPopover"
 import { FilterPopoverFooter } from "@/src/components/FilterBar/FilterPopoverFooter"
 import { getDistanceDisplayLabel } from "@/src/components/FilterBar/filterControls"
@@ -15,12 +16,13 @@ interface FutureVisionRadiusDropdownProps {
   platform: VersionBPlatform
 }
 
-/** Results radius control — briefcase trigger, radio list, SEEK preview footer */
+/** Results radius control — location pin, listed places, radio list, SEEK preview footer */
 export function FutureVisionRadiusDropdown({
   filterState,
   platform,
 }: FutureVisionRadiusDropdownProps) {
-  const { filters, search, applyFilters, hasLocation } = filterState
+  const { filters, search, applyFilters } = filterState
+  const { locations } = useFutureVisionLocations()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
   const [draftDistanceKm, setDraftDistanceKm] = useState(filters.distanceKm)
@@ -28,6 +30,7 @@ export function FutureVisionRadiusDropdown({
   const appliedDistanceKm = filters.distanceKm
   const hasDraftChanges = draftDistanceKm !== appliedDistanceKm
   const distanceLabel = getDistanceDisplayLabel(appliedDistanceKm)
+  const locationLabel = locations.join(", ")
 
   const previewCount = useMemo(
     () =>
@@ -39,7 +42,7 @@ export function FutureVisionRadiusDropdown({
     [draftDistanceKm, filters, search, platform],
   )
 
-  if (platform === "app" || !hasLocation) return null
+  if (platform === "app" || locations.length === 0) return null
 
   const handleOpen = () => {
     setDraftDistanceKm(appliedDistanceKm)
@@ -73,25 +76,32 @@ export function FutureVisionRadiusDropdown({
         type="button"
         aria-expanded={open}
         aria-haspopup="dialog"
-        aria-label={`Showing jobs within ${distanceLabel}. Change distance.`}
+        aria-label={`Showing jobs within ${distanceLabel} of ${locationLabel}. Change distance.`}
         onClick={() => (open ? handleClose() : handleOpen())}
         className={cn(
-          "inline-flex items-center gap-2 text-left text-sm leading-snug text-[#2E3849]",
+          "inline-flex items-start gap-2 text-left text-sm leading-snug text-[#2E3849]",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1E47A9] focus-visible:ring-offset-2",
         )}
       >
-        <IconJob className="h-4 w-4 shrink-0 text-[#5A6881]" aria-hidden />
-        <Text component="span" size="small">
-          Showing jobs within{" "}
-          <Strong>{distanceLabel}</Strong>
-        </Text>
-        <IconChevronDown
-          className={cn(
-            "h-4 w-4 shrink-0 text-[#5A6881] transition-transform duration-200 ease-out",
-            open && "rotate-180",
-          )}
+        <IconLocation
+          className="mt-0.5 h-4 w-4 shrink-0 text-[#5A6881]"
           aria-hidden
         />
+        <Text component="span" size="small" className="min-w-0">
+          Showing jobs within{" "}
+          <span className="inline-flex items-center gap-0.5 align-middle">
+            <Strong>{distanceLabel}</Strong>
+            <IconChevronDown
+              className={cn(
+                "h-4 w-4 shrink-0 text-[#5A6881] transition-transform duration-200 ease-out",
+                open && "rotate-180",
+              )}
+              aria-hidden
+            />
+          </span>
+          {" of "}
+          {locationLabel}
+        </Text>
       </button>
 
       <FilterPopover

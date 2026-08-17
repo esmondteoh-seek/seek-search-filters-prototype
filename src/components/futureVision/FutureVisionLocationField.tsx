@@ -408,7 +408,7 @@ export function FutureVisionLocationField({
 
       {showDropdownPanel ? (
         <div
-          className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-72 overflow-auto rounded-xl border border-[#EAECF1] bg-white shadow-lg"
+          className="absolute left-0 right-0 top-[calc(100%+4px)] z-[100] max-h-72 overflow-auto rounded-xl border border-[#EAECF1] bg-white shadow-lg"
         >
           {pillsInDropdown && locations.length > 0 ? (
             <div
