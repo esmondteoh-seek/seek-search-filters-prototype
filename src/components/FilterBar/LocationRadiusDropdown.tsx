@@ -29,7 +29,7 @@ export function LocationRadiusDropdown({
       popoverTitle="Distance"
       popoverWidth={360}
       variant="search"
-      className={cn("w-[104px] shrink-0 rounded-xl", className)}
+      className={cn("shrink-0 rounded-xl", className ?? "w-[104px]")}
       filters={filters}
       search={search}
       onApplyFilters={applyFilters}

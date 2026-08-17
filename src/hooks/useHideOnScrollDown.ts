@@ -6,9 +6,9 @@ const SCROLL_DELTA = 8
 /** Hide a chrome row when the user scrolls down; show again on scroll up or reveal() */
 export function useHideOnScrollDown(
   scrollRef: RefObject<HTMLElement | null>,
-  options: { forceVisible?: boolean; enabled?: boolean } = {},
+  options: { forceVisible?: boolean; enabled?: boolean; useWindow?: boolean } = {},
 ) {
-  const { forceVisible = false, enabled = true } = options
+  const { forceVisible = false, enabled = true, useWindow = false } = options
   const [hidden, setHidden] = useState(false)
   const lastY = useRef(0)
   const reduceMotion = useReducedMotion()
@@ -24,17 +24,17 @@ export function useHideOnScrollDown(
       setHidden(false)
       return
     }
-    const el = scrollRef.current
-    if (!el) return
 
-    lastY.current = el.scrollTop
+    const getScrollY = () => (useWindow ? window.scrollY : scrollRef.current?.scrollTop ?? 0)
+
+    lastY.current = getScrollY()
 
     const onScroll = () => {
       if (forceVisible) {
-        lastY.current = el.scrollTop
+        lastY.current = getScrollY()
         return
       }
-      const y = el.scrollTop
+      const y = getScrollY()
       if (y <= SCROLL_DELTA) {
         setHidden(false)
       } else if (y - lastY.current > SCROLL_DELTA) {
@@ -45,9 +45,17 @@ export function useHideOnScrollDown(
       lastY.current = y
     }
 
+    if (useWindow) {
+      window.addEventListener("scroll", onScroll, { passive: true })
+      return () => window.removeEventListener("scroll", onScroll)
+    }
+
+    const el = scrollRef.current
+    if (!el) return
+
     el.addEventListener("scroll", onScroll, { passive: true })
     return () => el.removeEventListener("scroll", onScroll)
-  }, [scrollRef, enabled, forceVisible])
+  }, [scrollRef, enabled, forceVisible, useWindow])
 
   return { hidden: enabled && hidden && !forceVisible, reveal, instant: reduceMotion ?? false }
 }

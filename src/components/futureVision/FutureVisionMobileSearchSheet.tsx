@@ -160,6 +160,7 @@ export function FutureVisionMobileSearchSheet({
                 <LocationRadiusDropdown
                   filterState={filterState}
                   forceVisible
+                  className="w-full rounded-xl"
                 />
               ) : null}
             </div>

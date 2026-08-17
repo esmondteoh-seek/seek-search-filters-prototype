@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { VERSION_B_SMART_FILTER_EVENT } from "@/src/lib/scrollSearchResultsToTop"
 import { FutureVisionMobileSearchSheet } from "@/src/components/futureVision/FutureVisionMobileSearchSheet"
 import { useFutureVisionLocations } from "@/src/components/futureVision/FutureVisionLocationsContext"
@@ -7,11 +7,11 @@ import {
   FutureVisionFilterChips,
   VersionBNavyBand,
 } from "@/src/components/futureVision/FutureVisionFilterChips"
-import { FutureVisionLocationChips } from "@/src/components/futureVision/FutureVisionLocationChips"
 import { FutureVisionResults } from "@/src/components/futureVision/FutureVisionResults"
 import { FutureVisionSearchForm } from "@/src/components/futureVision/FutureVisionSearchForm"
 import { useFutureVisionSubmit } from "@/src/components/futureVision/useFutureVisionSubmit"
 import { useCompactSearchChrome } from "@/src/hooks/useCompactSearchChrome"
+import { useHideOnScrollDown } from "@/src/hooks/useHideOnScrollDown"
 import { useMobileSearchSheet } from "@/src/hooks/useMobileSearchSheet"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
@@ -51,6 +51,13 @@ export function FutureVisionDesktop({
   } = useFutureVisionLocations()
   const showHangingTabs = locationChrome === "tab-chips"
   const isMultiPills = locationChrome === "multi-pills"
+  const windowScrollRef = useRef<HTMLDivElement>(null)
+  const { hidden: locationsHidden, reveal, instant } = useHideOnScrollDown(windowScrollRef, {
+    useWindow: true,
+    forceVisible: mobileSearchOpen || bandForceExpanded,
+    enabled: showHangingTabs && isMultiLocation && !hideSearchChrome,
+  })
+  const showLocations = isMultiLocation && !locationsHidden
 
   const compact = scrollCompact
   const hideSiteHeader = bandForceExpanded
@@ -83,6 +90,7 @@ export function FutureVisionDesktop({
   }, [bandForceExpanded, stopEditingLocation, setLocationQuery])
 
   const openSearch = () => {
+    reveal()
     openSearchDraft()
     if (compact) {
       stopEditingLocation()
@@ -121,7 +129,12 @@ export function FutureVisionDesktop({
               bandExpanded && "overflow-visible",
             )}
           >
-            <VersionBNavyBand className={cn(showHangingTabs && isMultiLocation && "pb-0")}>
+            <VersionBNavyBand
+              className={cn(
+                showHangingTabs && showLocations && "pb-0",
+                !bandExpanded && "py-2",
+              )}
+            >
               {bandExpanded ? (
                 <>
                   <FutureVisionSearchForm
@@ -134,10 +147,12 @@ export function FutureVisionDesktop({
                     platform="desktop"
                     layout="expanded"
                     includeLocationRow={showHangingTabs}
+                    hideLocationRow={locationsHidden}
+                    locationRowInstant={instant}
                   />
                 </>
               ) : (
-                <div className={cn("flex min-w-0", showHangingTabs && "flex-col gap-3")}>
+                <div className={cn("flex min-w-0 flex-col", showHangingTabs ? "gap-0" : "gap-2")}>
                   <div
                     className={cn(
                       "flex min-w-0 items-center gap-2 md:gap-3",
@@ -157,12 +172,11 @@ export function FutureVisionDesktop({
                       platform="desktop"
                       layout="inline"
                       onMoreClick={openSearch}
-                      includeLocationRow={false}
+                      includeLocationRow={showHangingTabs}
+                      hideLocationRow={locationsHidden}
+                      locationRowInstant={instant}
                     />
                   </div>
-                  {showHangingTabs && isMultiLocation ? (
-                    <FutureVisionLocationChips platform="desktop" />
-                  ) : null}
                 </div>
               )}
             </VersionBNavyBand>
@@ -170,7 +184,7 @@ export function FutureVisionDesktop({
         </>
       ) : null}
 
-      <div className={cn(!hideSearchChrome && "pt-2")}>
+      <div className={cn(!hideSearchChrome && (compact && !bandForceExpanded ? "pt-1" : "pt-2"))}>
         <FutureVisionResults
           filterState={filterState}
           platform="desktop"
