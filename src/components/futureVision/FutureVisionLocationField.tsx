@@ -16,6 +16,8 @@ interface FutureVisionLocationFieldProps {
   withFieldChrome?: boolean
   /** Focus ring offset against navy band vs overlay sheet */
   focusRingOffset?: "navy" | "overlay"
+  /** Desktop multi-pills: selected locations in the suggestion panel, field stays h-12 */
+  pillPlacement?: "field" | "dropdown"
 }
 
 function highlightProduction(text: string, query: string): React.ReactNode {
@@ -53,6 +55,31 @@ function highlightProduction(text: string, query: string): React.ReactNode {
   return <>{parts}</>
 }
 
+function LocationPill({
+  label,
+  index,
+  onRemove,
+}: {
+  label: string
+  index: number
+  onRemove: (index: number) => void
+}) {
+  return (
+    <span className="inline-flex max-w-full items-center gap-1 rounded-md bg-[#F5F7FA] py-1 pl-2 pr-1 text-sm text-[#2E3849]">
+      <span className="truncate">{label}</span>
+      <button
+        type="button"
+        onMouseDown={(e) => e.preventDefault()}
+        onClick={() => onRemove(index)}
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[#5A6881] hover:bg-[#EAECF1] hover:text-[#2E3849] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1E47A9]"
+        aria-label={`Remove ${label}`}
+      >
+        <IconClose className="h-3.5 w-3.5" aria-hidden />
+      </button>
+    </span>
+  )
+}
+
 const fieldChromeBase =
   "flex min-w-0 items-center gap-3 rounded-xl bg-white px-4 transition-shadow focus-within:ring-2 focus-within:ring-[#1E47A9] focus-within:ring-offset-2"
 
@@ -63,6 +90,7 @@ export function FutureVisionLocationField({
   inputClassName,
   withFieldChrome = false,
   focusRingOffset,
+  pillPlacement = "field",
 }: FutureVisionLocationFieldProps) {
   const listboxId = useId()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -86,13 +114,15 @@ export function FutureVisionLocationField({
   const locationCount = locations.length
   const locationCountLabel = `${locationCount} locations`
   const overlayPillMode = withFieldChrome
+  const pillsInDropdown = overlayPillMode && pillPlacement === "dropdown"
+  const pillsInField = overlayPillMode && pillPlacement === "field"
   const ringOffsetClass =
     (focusRingOffset ?? (withFieldChrome ? "overlay" : "navy")) === "navy"
       ? "focus-within:ring-offset-[#051A49]"
       : "focus-within:ring-offset-[#2E3849]"
   const overlayShowRest =
     overlayPillMode && !fieldFocused && !isEditingLocation && locationCount > 0
-  const overlayShowPills = overlayPillMode && (fieldFocused || isEditingLocation)
+  const overlayShowPills = pillsInField && (fieldFocused || isEditingLocation)
   const overlayRestLabel = locationCount === 1 ? locations[0] : locationCountLabel
   const showSummary = !overlayPillMode && locationCount > 1 && !isEditingLocation
   const displayValue = overlayPillMode
@@ -108,6 +138,15 @@ export function FutureVisionLocationField({
     ? locations.length > 0 || locationQuery.length > 0
     : displayValue.length > 0
 
+  const shouldOpenDropdown = (query: string) =>
+    locations.length > 0 || query.trim().length >= 2
+
+  const showDropdownPanel =
+    isOpen &&
+    (pillsInDropdown
+      ? locations.length > 0 || suggestions.length > 0
+      : suggestions.length > 0)
+
   useEffect(() => {
     if (overlayShowPills && fieldFocused) {
       inputRef.current?.focus()
@@ -120,7 +159,11 @@ export function FutureVisionLocationField({
 
   const handleSelect = (location: FutureVisionLocation) => {
     selectSuggestion(location)
-    setIsOpen(false)
+    if (pillsInDropdown) {
+      setIsOpen(true)
+    } else {
+      setIsOpen(false)
+    }
   }
 
   const handleFocus = () => {
@@ -136,14 +179,22 @@ export function FutureVisionLocationField({
         setLocationQuery("")
       }
     }
-    setIsOpen(locationQuery.trim().length >= 2)
+    if (pillsInDropdown) {
+      setIsOpen(shouldOpenDropdown(locationQuery))
+    } else {
+      setIsOpen(locationQuery.trim().length >= 2)
+    }
   }
 
   const handleChange = (value: string) => {
     if (showSummary) startEditingLocation()
     if (!isEditingLocation) startEditingLocation()
     setLocationQuery(value)
-    setIsOpen(value.trim().length >= 2)
+    if (pillsInDropdown) {
+      setIsOpen(shouldOpenDropdown(value))
+    } else {
+      setIsOpen(value.trim().length >= 2)
+    }
   }
 
   const handleClearAll = () => {
@@ -154,6 +205,17 @@ export function FutureVisionLocationField({
       startEditingLocation()
     }
     inputRef.current?.focus()
+    if (pillsInDropdown) {
+      setIsOpen(false)
+    }
+  }
+
+  const handleRemovePill = (index: number) => {
+    removeLocationPill(index)
+    inputRef.current?.focus()
+    if (pillsInDropdown) {
+      setIsOpen(true)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -192,7 +254,15 @@ export function FutureVisionLocationField({
     setFieldFocused(true)
     startEditingLocation()
     inputRef.current?.focus()
+    if (pillsInDropdown) {
+      setIsOpen(shouldOpenDropdown(locationQuery))
+    }
   }
+
+  const showPlaceholder =
+    pillsInDropdown
+      ? !overlayShowRest
+      : !(overlayPillMode && (locations.length > 0 || overlayShowRest))
 
   const inputElement = (
     <input
@@ -203,28 +273,63 @@ export function FutureVisionLocationField({
       onFocus={handleFocus}
       onBlur={handleBlur}
       onKeyDown={handleKeyDown}
-      placeholder={
-        overlayPillMode && (locations.length > 0 || overlayShowRest)
-          ? undefined
-          : "Enter suburb, city, or region"
-      }
+      placeholder={showPlaceholder ? "Enter suburb, city, or region" : undefined}
       spellCheck={false}
       autoComplete="off"
       className={cn(
         "search-input-no-clear min-w-0 bg-transparent text-base text-[#2E3849] outline-none placeholder:text-[#5A6881]",
-        overlayPillMode ? "min-w-[8rem] flex-1" : "min-w-0 flex-1",
+        overlayPillMode ? "min-w-0 flex-1" : "min-w-0 flex-1",
+        pillsInField && "min-w-[8rem]",
         showSummary && "cursor-pointer",
         inputClassName,
       )}
       aria-label={showSummary ? locationCountLabel : "Location"}
-      aria-expanded={isOpen}
+      aria-expanded={showDropdownPanel}
       aria-controls={listboxId}
       aria-autocomplete="list"
       role="combobox"
     />
   )
 
-  const fieldInner = overlayPillMode ? (
+  const fieldInner = pillsInDropdown ? (
+    overlayShowRest ? (
+      <>
+        <IconLocation className="h-5 w-5 shrink-0 text-[#5A6881]" aria-hidden />
+        <button
+          type="button"
+          onClick={handleFocusRest}
+          className="min-w-0 flex-1 truncate text-left text-base text-[#2E3849] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1E47A9] focus-visible:ring-offset-2"
+          aria-label={overlayRestLabel}
+        >
+          {overlayRestLabel}
+        </button>
+        <input
+          ref={inputRef}
+          type="text"
+          tabIndex={-1}
+          aria-hidden
+          className="sr-only"
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+        />
+        <SearchFieldClearButton
+          visible={showFieldClear}
+          onClear={handleClearAll}
+          label="Clear all locations"
+        />
+      </>
+    ) : (
+      <>
+        <IconLocation className="h-5 w-5 shrink-0 text-[#5A6881]" aria-hidden />
+        {inputElement}
+        <SearchFieldClearButton
+          visible={showFieldClear}
+          onClear={handleClearAll}
+          label="Clear all locations"
+        />
+      </>
+    )
+  ) : overlayPillMode ? (
     overlayShowRest ? (
       <>
         <IconLocation className="h-5 w-5 shrink-0 text-[#5A6881]" aria-hidden />
@@ -257,20 +362,12 @@ export function FutureVisionLocationField({
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 py-2">
           {overlayShowPills
             ? locations.map((label, index) => (
-                <span
+                <LocationPill
                   key={`${label}-${index}`}
-                  className="inline-flex max-w-full items-center gap-1 rounded-md bg-[#F5F7FA] py-1 pl-2 pr-1 text-sm text-[#2E3849]"
-                >
-                  <span className="truncate">{label}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeLocationPill(index)}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[#5A6881] hover:bg-[#EAECF1] hover:text-[#2E3849] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1E47A9]"
-                    aria-label={`Remove ${label}`}
-                  >
-                    <IconClose className="h-3.5 w-3.5" aria-hidden />
-                  </button>
-                </span>
+                  label={label}
+                  index={index}
+                  onRemove={removeLocationPill}
+                />
               ))
             : null}
           {inputElement}
@@ -300,42 +397,61 @@ export function FutureVisionLocationField({
       <div
         className={cn(
           fieldChromeBase,
-          overlayPillMode ? (overlayShowRest ? "h-12 items-center" : "min-h-12 items-start") : "h-12",
+          pillsInDropdown || overlayShowRest || !overlayPillMode
+            ? "h-12 items-center"
+            : "min-h-12 items-start",
           ringOffsetClass,
         )}
       >
         {fieldInner}
       </div>
 
-      {isOpen && suggestions.length > 0 ? (
-        <ul
-          id={listboxId}
-          role="listbox"
-          className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-72 overflow-auto rounded-xl border border-[#EAECF1] bg-white py-2 shadow-lg"
+      {showDropdownPanel ? (
+        <div
+          className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-72 overflow-auto rounded-xl border border-[#EAECF1] bg-white shadow-lg"
         >
-          {suggestions.map((item, index) => (
-            <li
-              key={item.id}
-              role="option"
-              aria-selected={index === highlightedIndex}
-              className={cn(
-                "cursor-pointer px-4 py-3 text-base text-[#2E3849]",
-                index === highlightedIndex ? "bg-[#F5F8FF]" : "hover:bg-[#F5F8FF]",
-              )}
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => handleSelect(item)}
+          {pillsInDropdown && locations.length > 0 ? (
+            <div
+              className="flex flex-wrap gap-2 border-b border-[#EAECF1] px-4 py-3"
+              aria-label="Selected locations"
             >
-              <span className="block min-w-0">
-                {highlightProduction(item.displayName, locationQuery)}
-              </span>
-              {item.secondaryLabel ? (
-                <span className="mt-0.5 block text-sm text-[#2E3849]">
-                  {highlightProduction(item.secondaryLabel, locationQuery)}
-                </span>
-              ) : null}
-            </li>
-          ))}
-        </ul>
+              {locations.map((label, index) => (
+                <LocationPill
+                  key={`${label}-${index}`}
+                  label={label}
+                  index={index}
+                  onRemove={handleRemovePill}
+                />
+              ))}
+            </div>
+          ) : null}
+          {suggestions.length > 0 ? (
+            <ul id={listboxId} role="listbox" className="py-2">
+              {suggestions.map((item, index) => (
+                <li
+                  key={item.id}
+                  role="option"
+                  aria-selected={index === highlightedIndex}
+                  className={cn(
+                    "cursor-pointer px-4 py-3 text-base text-[#2E3849]",
+                    index === highlightedIndex ? "bg-[#F5F8FF]" : "hover:bg-[#F5F8FF]",
+                  )}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleSelect(item)}
+                >
+                  <span className="block min-w-0">
+                    {highlightProduction(item.displayName, locationQuery)}
+                  </span>
+                  {item.secondaryLabel ? (
+                    <span className="mt-0.5 block text-sm text-[#2E3849]">
+                      {highlightProduction(item.secondaryLabel, locationQuery)}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
     </div>
   )

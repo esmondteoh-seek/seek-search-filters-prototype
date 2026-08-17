@@ -79,6 +79,7 @@ export function FutureVisionSearchForm({
           onSubmit={onSubmit}
           className="min-w-0 flex-1"
           withFieldChrome={locationChrome === "multi-pills"}
+          pillPlacement={locationChrome === "multi-pills" ? "dropdown" : "field"}
           focusRingOffset="navy"
         />
       </div>
