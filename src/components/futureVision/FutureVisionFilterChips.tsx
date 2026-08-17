@@ -168,7 +168,6 @@ export function FutureVisionFilterChips({
       getFutureVisionScaledJobCount(platform, draft, draftSearch),
   }
   const appMode = platform === "app"
-  const mobileWebInline = platform === "mobile-web" && layout === "inline"
   const appliedCount = countModalFilters(filters)
 
   const personalised = (
@@ -298,11 +297,8 @@ export function FutureVisionFilterChips({
 
   const inlineRow = (
     <div
-      className={cn(
-        "flex min-w-0 items-center gap-2",
-        mobileWebInline ? "flex-wrap" : "flex-nowrap overflow-x-auto hide-scrollbar",
-      )}
-      style={mobileWebInline ? undefined : { WebkitOverflowScrolling: "touch" }}
+      className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto hide-scrollbar"
+      style={{ WebkitOverflowScrolling: "touch" }}
     >
       {personalised}
       <MoreChip appliedCount={appliedCount} onClick={onMoreClick} />

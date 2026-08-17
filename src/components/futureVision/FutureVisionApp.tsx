@@ -140,7 +140,7 @@ export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
               <IconFilter className="h-5 w-5" aria-hidden />
               {showFilterDot ? (
                 <span
-                  className="absolute right-1.5 top-1.5 size-2.5 rounded-full"
+                  className="absolute right-1.5 top-1.5 size-2.5 rounded-full border-2 border-white"
                   style={{ backgroundColor: VERSION_B_TOKENS.formAccent }}
                   aria-hidden
                 />

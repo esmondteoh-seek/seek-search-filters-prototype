@@ -150,19 +150,17 @@ export function FutureVisionMobileSearchSheet({
               />
             </label>
 
-            <div className="flex flex-nowrap items-start gap-2">
+            <div className="flex flex-col gap-2">
               <FutureVisionLocationField
                 onSubmit={handleSeek}
                 withFieldChrome
-                className="min-w-0 flex-1"
+                className="min-w-0 w-full"
               />
               {showRadius ? (
-                <div className="h-12 shrink-0 self-start">
-                  <LocationRadiusDropdown
-                    filterState={filterState}
-                    forceVisible
-                  />
-                </div>
+                <LocationRadiusDropdown
+                  filterState={filterState}
+                  forceVisible
+                />
               ) : null}
             </div>
 
