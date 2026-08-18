@@ -1,6 +1,6 @@
 import { IconLocation, IconSearch } from "@/components/braid/icons"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
-import { formatVersionBCompactSearchLabel, getVersionBDisplayJobCount, type VersionBPlatform, type VersionBPreviewState } from "@/src/data/versionBPresets"
+import { formatVersionBCompactSearchLabel, getVersionBDisplayJobCount, versionBUsesPresetJobCount, type VersionBPlatform, type VersionBPreviewState } from "@/src/data/versionBPresets"
 import { getFilteredJobs, type UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
 import { cn } from "@/lib/utils"
@@ -28,12 +28,11 @@ export function VersionBSearchForm({
 }: VersionBSearchFormProps) {
   const { draftSearch, updateDraftSearch, search, filters } = filterState
   const pillLabel = formatVersionBCompactSearchLabel(search)
-  const mockCount =
-    previewState !== undefined
-      ? getVersionBDisplayJobCount(platform, previewState)
-      : undefined
-  const seekJobCount =
-    mockCount ?? getFilteredJobs(filters, draftSearch).length
+  const usePresetCount =
+    previewState !== undefined &&
+    versionBUsesPresetJobCount(platform, previewState, search)
+  const mockCount = usePresetCount ? getVersionBDisplayJobCount(platform, previewState) : undefined
+  const seekJobCount = mockCount ?? getFilteredJobs(filters, draftSearch).length
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {

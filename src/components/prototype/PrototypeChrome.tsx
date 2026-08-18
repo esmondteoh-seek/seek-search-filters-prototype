@@ -106,9 +106,10 @@ export function PrototypeChrome({
   const { setConceptId } = useConceptParam()
   const activeConcept = getConceptById(conceptId)
   const isFutureVision = isFutureVisionConcept(conceptId)
+  const isVersionB = conceptId === "version-b"
   const explain = useFutureVisionExplainability()
   const showPlatformControls =
-    (conceptId === "version-b" || isFutureVision) && onPlatformChange
+    (isVersionB || isFutureVision) && onPlatformChange
   const activePlatform = PLATFORMS.find((p) => p.value === platform) ?? PLATFORMS[0]
   const activeFvConceptId = conceptId === "tab-chips" ? "tab-chips" : "multi-pills"
 
@@ -179,9 +180,24 @@ export function PrototypeChrome({
       >
         {showPlatformControls ? (
           <div className="flex flex-col gap-1.5">
-            <span className="px-1 text-[10px] font-semibold uppercase tracking-wide text-white/50">
-              Surface
-            </span>
+            <div className="flex items-center justify-between gap-2">
+              <span className="px-1 text-[10px] font-semibold uppercase tracking-wide text-white/50">
+                Surface
+              </span>
+              {isVersionB ? (
+                <button
+                  type="button"
+                  onClick={() => setCollapsed(true)}
+                  className="rounded-full p-1 text-white/50 hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  aria-label="Minimize prototype controls"
+                  title="Minimize"
+                >
+                  <span aria-hidden className="block text-sm leading-none">
+                    −
+                  </span>
+                </button>
+              ) : null}
+            </div>
             <div
               className="grid grid-cols-3 gap-1 rounded-xl bg-black/30 p-1"
               role="group"
@@ -250,6 +266,7 @@ export function PrototypeChrome({
           </div>
         ) : null}
 
+        {!isVersionB ? (
         <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-2.5">
           {isFutureVision && explain ? (
             <button
@@ -306,11 +323,14 @@ export function PrototypeChrome({
             </span>
           </button>
         </div>
+        ) : null}
       </div>
 
+      {!isVersionB ? (
       <p className="rounded-lg bg-[#1a1a2e]/90 px-2.5 py-1 text-[10px] font-medium text-white/70 shadow-md ring-1 ring-white/10">
         {viewportLabel}
       </p>
+      ) : null}
     </div>
   )
 }

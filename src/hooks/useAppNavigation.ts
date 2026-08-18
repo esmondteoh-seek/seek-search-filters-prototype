@@ -14,8 +14,6 @@ function readUrlParams() {
 export function readAppView(): AppView {
   if (typeof window === "undefined") return "home"
   applyShareConceptIfNeeded()
-  const params = readUrlParams()
-  if (params.get("concept")) return "jobs"
   const path = stripAppBasePath(window.location.pathname)
   return path === "/jobs" ? "jobs" : "home"
 }
@@ -60,13 +58,17 @@ export function navigateToHome() {
 export function enterPrototype(
   conceptId: string,
   search: SearchQuery,
-  options?: { platform?: string; vbState?: string },
+  options?: { platform?: string; vbState?: string; view?: AppView },
 ) {
-  const url = new URL(window.location.origin + getJobsPath())
-  const keywords = search.keywords.trim()
-  const location = search.location.trim()
-  if (keywords) url.searchParams.set("keywords", keywords)
-  if (location) url.searchParams.set("location", location)
+  const useHome = options?.view === "home"
+  const path = useHome ? (getAppBasePath() ? `${getAppBasePath()}/` : "/") : getJobsPath()
+  const url = new URL(window.location.origin + path)
+  if (!useHome) {
+    const keywords = search.keywords.trim()
+    const location = search.location.trim()
+    if (keywords) url.searchParams.set("keywords", keywords)
+    if (location) url.searchParams.set("location", location)
+  }
   url.searchParams.set("concept", conceptId)
   if (options?.platform) url.searchParams.set("platform", options.platform)
   if (options?.vbState) url.searchParams.set("vbState", options.vbState)
@@ -74,14 +76,14 @@ export function enterPrototype(
   notifyNavigationChange()
 }
 
-/** When `?concept=` is set, prototypes live on `/jobs` — normalize pasted links */
+/** When `?concept=` is set, prototypes live on `/jobs` — normalize stray paths (not home) */
 export function redirectPrototypeToJobsIfNeeded() {
   if (typeof window === "undefined") return false
   applyShareConceptIfNeeded()
   const params = readUrlParams()
   if (!params.get("concept")) return false
   const path = stripAppBasePath(window.location.pathname)
-  if (path === "/jobs") return false
+  if (path === "/jobs" || path === "/" || path === "") return false
   const url = new URL(window.location.href)
   url.pathname = getJobsPath()
   window.history.replaceState(null, "", url.pathname + url.search)

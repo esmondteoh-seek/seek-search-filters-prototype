@@ -60,7 +60,6 @@ export function getVersionBFilterPatch(preview: VersionBPreviewState): Partial<F
   return preview === "default" ? VERSION_B_DEFAULT_FILTER_PATCH : VERSION_B_SELECTED_FILTER_PATCH
 }
 
-/** Frame job counts — prototype display only */
 export function getVersionBDisplayJobCount(
   platform: VersionBPlatform,
   preview: VersionBPreviewState,
@@ -72,6 +71,19 @@ export function getVersionBDisplayJobCount(
   if (platform === "mobile-web") return 255
   if (platform === "app") return 246
   return undefined
+}
+
+/** True when live search still matches the Figma frame preset — use mock counts */
+export function versionBUsesPresetJobCount(
+  platform: VersionBPlatform,
+  preview: VersionBPreviewState,
+  search: SearchQuery,
+): boolean {
+  const preset = getVersionBSearch(platform, preview)
+  return (
+    search.keywords.trim() === preset.keywords.trim() &&
+    search.location.trim() === preset.location.trim()
+  )
 }
 
 export function formatVersionBCompactSearchLabel(search: SearchQuery): string {

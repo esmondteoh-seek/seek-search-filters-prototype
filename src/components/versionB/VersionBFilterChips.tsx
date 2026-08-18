@@ -1,4 +1,6 @@
 import { IconFilter } from "@/components/braid/icons"
+import { motion, useReducedMotion } from "motion/react"
+import { useEffect, useState, type ReactNode } from "react"
 import {
   ClassificationFilterContent,
   ListingTimeFilterContent,
@@ -17,6 +19,7 @@ import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { countModalFilters } from "@/src/hooks/useJobFilters"
 import { FilterSurfaceButton } from "@/src/components/motion/FilterSurfaceButton"
+import { motionTokens } from "@/src/lib/motionTokens"
 import { cn } from "@/lib/utils"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
 
@@ -124,6 +127,63 @@ function MoreChip({
   )
 }
 
+/** Personalised chips fade in and push fixed filters right on mount */
+function AnimatedPersonalisedFilters({ children }: { children: ReactNode }) {
+  const reduceMotion = useReducedMotion()
+  const [revealed, setRevealed] = useState(Boolean(reduceMotion))
+
+  useEffect(() => {
+    if (reduceMotion) return
+    const id = requestAnimationFrame(() => setRevealed(true))
+    return () => cancelAnimationFrame(id)
+  }, [reduceMotion])
+
+  return (
+    <motion.div
+      layout
+      className="flex shrink-0 overflow-hidden"
+      initial={false}
+      animate={{
+        opacity: revealed ? 1 : 0,
+        width: revealed ? "auto" : 0,
+      }}
+      transition={{
+        opacity: { duration: motionTokens.duration.slow, ease: motionTokens.ease.out },
+        width: { duration: motionTokens.duration.slow, ease: motionTokens.ease.out },
+        layout: { duration: motionTokens.duration.slow, ease: motionTokens.ease.out },
+      }}
+    >
+      <div className="flex items-center gap-3 pr-3">{children}</div>
+    </motion.div>
+  )
+}
+
+function FilterChipRow({
+  personalised,
+  trailing,
+  className,
+}: {
+  personalised: ReactNode
+  trailing: ReactNode
+  className?: string
+}) {
+  return (
+    <motion.div
+      layout
+      className={cn(
+        "flex min-w-0 flex-nowrap items-center overflow-x-auto hide-scrollbar",
+        className,
+      )}
+      style={{ WebkitOverflowScrolling: "touch" }}
+    >
+      <AnimatedPersonalisedFilters>{personalised}</AnimatedPersonalisedFilters>
+      <motion.div layout className="flex shrink-0 items-center gap-3">
+        {trailing}
+      </motion.div>
+    </motion.div>
+  )
+}
+
 /** Version B filter chips — NTY dot, outline diamond, More (5); no sort on band */
 export function VersionBFilterChips({
   filterState,
@@ -228,12 +288,7 @@ export function VersionBFilterChips({
   )
 
   if (layout === "expanded" && !appMode) {
-    return (
-      <div className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto hide-scrollbar">
-        {personalised}
-        {fixedPills}
-      </div>
-    )
+    return <FilterChipRow personalised={personalised} trailing={fixedPills} />
   }
 
   if (appMode) {
@@ -245,13 +300,16 @@ export function VersionBFilterChips({
   }
 
   return (
-    <div
-      className="flex min-w-0 flex-nowrap items-center gap-3 overflow-x-auto hide-scrollbar"
-      style={{ WebkitOverflowScrolling: "touch" }}
-    >
-      {personalised}
-      <MoreChip appliedCount={appliedCount} onClick={onMoreClick} />
-    </div>
+    <FilterChipRow
+      personalised={personalised}
+      className={mobileWeb ? "-mx-5 scroll-px-5 px-5" : undefined}
+      trailing={
+        <>
+          <MoreChip appliedCount={appliedCount} onClick={onMoreClick} />
+          {mobileWeb ? <span className="w-5 shrink-0" aria-hidden /> : null}
+        </>
+      }
+    />
   )
 }
 

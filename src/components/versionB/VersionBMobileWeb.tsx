@@ -9,6 +9,7 @@ import { VersionBResults } from "@/src/components/versionB/VersionBResults"
 import { VersionBMobileSearchPill } from "@/src/components/versionB/VersionBSearchForm"
 import { PhoneFrame } from "@/src/components/shared/PhoneFrame"
 import { useMobileSearchSheet } from "@/src/hooks/useMobileSearchSheet"
+import { navigateToHome } from "@/src/hooks/useAppNavigation"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { formatVersionBCompactSearchLabel } from "@/src/data/versionBPresets"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
@@ -28,7 +29,14 @@ export function VersionBMobileWeb({ filterState, previewState }: VersionBMobileW
   return (
     <PhoneFrame className="bg-white">
       <header className="flex shrink-0 items-center justify-between border-b border-[#EAECF1] bg-white px-4 py-3">
-        <SeekLogo className="h-7 w-auto text-[#1E47A9]" />
+        <button
+          type="button"
+          onClick={() => navigateToHome()}
+          className="rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1E47A9]"
+          aria-label="SEEK Home"
+        >
+          <SeekLogo className="h-7 w-auto text-[#1E47A9]" />
+        </button>
         <button
           type="button"
           className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium text-[#2E3849] hover:bg-[#F5F7FA]"

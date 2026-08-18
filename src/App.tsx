@@ -5,6 +5,7 @@ import { isFutureVisionConcept } from "@/src/concepts/index"
 import { ConceptViewport } from "@/src/components/prototype/ConceptViewport"
 import { PrototypeChrome } from "@/src/components/prototype/PrototypeChrome"
 import { SeekHomePage, useSeekDocumentTitle } from "@/src/pages/SeekHomePage"
+import { VersionBHomePage } from "@/src/components/versionB/VersionBHomePage"
 import { PrototypeLibraryPage } from "@/src/pages/PrototypeLibraryPage"
 import { DEFAULT_SEARCH } from "@/src/hooks/searchQuery"
 import { readAppView, readSearchFromUrl, redirectPrototypeToJobsIfNeeded, useAppNavigation } from "@/src/hooks/useAppNavigation"
@@ -44,7 +45,7 @@ export default function App() {
 
   useEffect(() => {
     if (!inPrototypeMode || view !== "jobs") return
-    if (isFutureVisionConcept(conceptId) || conceptId === "version-b") return
+    if (isFutureVisionConcept(conceptId) || conceptId === "version-b" || conceptId === "mls-framing") return
     const fromUrl = readSearchFromUrl()
     if (fromUrl.keywords || fromUrl.location) {
       applySearchQuery(fromUrl)
@@ -84,7 +85,15 @@ export default function App() {
   if (view === "home") {
     return (
       <>
-        <SeekHomePage onSearch={handleHomeSearch} />
+        {isVersionB ? (
+          <VersionBHomePage
+            onSearch={handleHomeSearch}
+            platform={platform}
+            previewState={previewState}
+          />
+        ) : (
+          <SeekHomePage onSearch={handleHomeSearch} />
+        )}
         {chrome}
       </>
     )

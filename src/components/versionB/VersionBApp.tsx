@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { IconFilter } from "@/components/braid/icons"
-import { MobileSearchSheet } from "@/src/components/MobileSearchSheet"
+import { VersionBAppSearchSheet } from "@/src/components/versionB/VersionBAppSearchSheet"
 import { MobileJobDetailView } from "@/src/components/Results/MobileJobDetailView"
 import { VersionBFilterChips } from "@/src/components/versionB/VersionBFilterChips"
 import { VersionBResults } from "@/src/components/versionB/VersionBResults"
@@ -175,12 +175,10 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
           <div className="h-1 w-28 rounded-full bg-[#2E3849]/20" aria-hidden />
         </div>
 
-      <MobileSearchSheet
+      <VersionBAppSearchSheet
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         filterState={filterState}
-        showLocationRadius={false}
-        brandSeekButton
       />
     </PhoneFrame>
   )

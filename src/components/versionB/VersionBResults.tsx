@@ -10,7 +10,7 @@ import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { Text } from "@/components/braid"
 import { cn } from "@/lib/utils"
 import type { VersionBPlatform, VersionBPreviewState } from "@/src/data/versionBPresets"
-import { getVersionBDisplayJobCount } from "@/src/data/versionBPresets"
+import { getVersionBDisplayJobCount, versionBUsesPresetJobCount } from "@/src/data/versionBPresets"
 
 interface VersionBResultsProps {
   filterState: UseJobFiltersReturn
@@ -87,11 +87,16 @@ export function VersionBResults({
     openMobileDetail,
     closeMobileDetail,
     filters,
+    search,
     updateFilters,
     markNewToYouJobSeen,
   } = filterState
 
-  const frameCount = getVersionBDisplayJobCount(platform, previewState) ?? filteredJobs.length
+  const usePresetCount = versionBUsesPresetJobCount(platform, previewState, search)
+  const frameCount =
+    usePresetCount
+      ? getVersionBDisplayJobCount(platform, previewState) ?? filteredJobs.length
+      : filteredJobs.length
   const isApp = platform === "app"
   const [isNarrow, setIsNarrow] = useState(singleColumn)
 

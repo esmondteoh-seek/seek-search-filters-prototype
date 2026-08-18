@@ -23,24 +23,41 @@ import type { SearchQuery } from "@/src/hooks/searchQuery"
 
 interface SeekHomePageProps {
   onSearch: (query: SearchQuery) => void
+  userName?: string
+  /** Force stacked mobile hero (PhoneFrame — ignores viewport width) */
+  forceMobile?: boolean
+  /** Hide global SiteHeader (frame provides its own chrome) */
+  hideSiteHeader?: boolean
+  /** Scroll feed inside parent flex column instead of page */
+  contained?: boolean
 }
 
 /** SEEK Career Feed home — Figma Home-Career-Feed FY26 (desktop 12667:105561, mobile 12667:104931) */
-export function SeekHomePage({ onSearch }: SeekHomePageProps) {
+export function SeekHomePage({
+  onSearch,
+  userName = "Michael",
+  forceMobile = false,
+  hideSiteHeader = false,
+  contained = false,
+}: SeekHomePageProps) {
   const [keywords, setKeywords] = useState("")
   const [classification, setClassification] = useState("")
   const [location, setLocation] = useState("")
-  const [isMobile, setIsMobile] = useState(false)
+  const [viewportMobile, setViewportMobile] = useState(forceMobile)
 
   useEffect(() => {
+    if (forceMobile) return
     const mq = window.matchMedia("(max-width: 767px)")
-    const update = () => setIsMobile(mq.matches)
+    const update = () => setViewportMobile(mq.matches)
     update()
     mq.addEventListener("change", update)
     return () => mq.removeEventListener("change", update)
-  }, [])
+  }, [forceMobile])
 
-  const { hidden: headerHidden, instant: headerInstant } = useScrollAwayHeader(!isMobile)
+  const isMobileLayout = forceMobile || viewportMobile
+  const { hidden: headerHidden, instant: headerInstant } = useScrollAwayHeader(
+    !hideSiteHeader && !isMobileLayout,
+  )
 
   const submit = (query: SearchQuery = { keywords: keywords || classification, location }) => {
     onSearch({
@@ -57,7 +74,12 @@ export function SeekHomePage({ onSearch }: SeekHomePageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className={cn(
+        "bg-white",
+        contained ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "min-h-screen",
+      )}
+    >
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:shadow-lg"
@@ -65,14 +87,19 @@ export function SeekHomePage({ onSearch }: SeekHomePageProps) {
         Skip to content
       </a>
 
-      <SiteHeader
-        userName="Michael"
-        sticky={!isMobile}
-        hidden={headerHidden}
-        instant={headerInstant}
-      />
+      {!hideSiteHeader ? (
+        <SiteHeader
+          userName={userName}
+          sticky={!isMobileLayout}
+          hidden={headerHidden}
+          instant={headerInstant}
+        />
+      ) : null}
 
-      <main id="main-content">
+      <main
+        id="main-content"
+        className={cn(contained && "min-h-0 flex-1 overflow-y-auto overscroll-contain")}
+      >
         {/* Hero search */}
         <section className="relative overflow-hidden bg-[#051A49]">
           <div
@@ -97,7 +124,7 @@ export function SeekHomePage({ onSearch }: SeekHomePageProps) {
             <h1 className="sr-only">Perform a job search</h1>
 
             {/* Desktop */}
-            <div className="hidden md:block">
+            <div className={cn(isMobileLayout ? "hidden" : "hidden md:block")}>
               <div className="flex items-center gap-3">
                 <div className="flex h-12 min-w-0 flex-1 items-center overflow-hidden rounded-lg bg-white">
                   <label className="flex h-full min-w-0 flex-[1.6] items-center gap-3 border-r border-[#EAECF1] px-4">
@@ -162,7 +189,7 @@ export function SeekHomePage({ onSearch }: SeekHomePageProps) {
             </div>
 
             {/* Mobile — What / Where labels per Figma */}
-            <div className="flex flex-col gap-6 md:hidden">
+            <div className={cn("flex flex-col gap-6", !isMobileLayout && "md:hidden")}>
               <div className="flex flex-col gap-4">
                 <p className="text-base font-medium text-white">What</p>
                 <div className="flex flex-col gap-2">
@@ -220,7 +247,7 @@ export function SeekHomePage({ onSearch }: SeekHomePageProps) {
         </section>
 
         {/* Recent searches */}
-        <section className="border-b border-[#EAECF1] bg-white py-4 md:py-5">
+        <section className={cn("border-b border-[#EAECF1] bg-white py-4", !isMobileLayout && "md:py-5")}>
           <div className="mx-auto max-w-[1280px] px-4 md:px-0">
             <div className="flex gap-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {HOME_RECENT_SEARCHES.map((item) => (
@@ -233,7 +260,7 @@ export function SeekHomePage({ onSearch }: SeekHomePageProps) {
               ))}
             </div>
 
-            <div className="mt-4 flex flex-col gap-3 md:hidden">
+            <div className={cn("mt-4 flex flex-col gap-3", !isMobileLayout && "md:hidden")}>
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -272,21 +299,32 @@ export function SeekHomePage({ onSearch }: SeekHomePageProps) {
         </section>
 
         {/* Feed + sidebar */}
-        <section className="bg-[#F7F8FB] py-8 md:py-10">
-          <div className="mx-auto flex max-w-[1280px] gap-10 px-4 md:px-0 lg:gap-16">
+        <section className={cn("bg-[#F7F8FB] py-8", !isMobileLayout && "md:py-10")}>
+          <div
+            className={cn(
+              "mx-auto flex max-w-[1280px] px-4 md:px-0",
+              isMobileLayout ? "flex-col gap-6" : "gap-10 lg:gap-16",
+            )}
+          >
             <div className="min-w-0 flex-1">
-              <div className="lg:hidden">
+              {isMobileLayout ? (
                 <HomeRecommendedHeader mobile />
-              </div>
-              <div className="hidden lg:block">
-                <HomeRecommendedHeader />
-              </div>
+              ) : (
+                <>
+                  <div className="lg:hidden">
+                    <HomeRecommendedHeader mobile />
+                  </div>
+                  <div className="hidden lg:block">
+                    <HomeRecommendedHeader />
+                  </div>
+                </>
+              )}
               <div className="mt-6 flex flex-col gap-6">
                 {HOME_RECOMMENDED_JOBS.map((job) => (
                   <HomeRecommendedCard
                     key={job.id}
                     job={job}
-                    compact={false}
+                    compact={isMobileLayout}
                     onSelect={() =>
                       submit({
                         keywords: job.searchKeywords,
@@ -298,15 +336,36 @@ export function SeekHomePage({ onSearch }: SeekHomePageProps) {
               </div>
             </div>
 
-            <HomeSidebar
-              headerHidden={headerHidden}
-              onSavedSearchSelect={(query) => submit(query)}
-              onSavedJobSelect={(query) => submit(query)}
-            />
+            {!isMobileLayout ? (
+              <HomeSidebar
+                headerHidden={headerHidden}
+                onSavedSearchSelect={(query) => submit(query)}
+                onSavedJobSelect={(query) => submit(query)}
+              />
+            ) : null}
           </div>
         </section>
+
+        {contained ? (
+          <footer className="border-t border-[#EAECF1] bg-white py-6">
+            <div className="px-4">
+              <nav
+                className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-[#5A6881]"
+                aria-label="Footer"
+              >
+                {["About SEEK", "Terms & conditions", "Security & Privacy"].map((label) => (
+                  <a key={label} href="#" className="hover:text-[#2E3849] hover:underline">
+                    {label}
+                  </a>
+                ))}
+              </nav>
+              <p className="mt-4 text-xs text-[#5A6881]">© SEEK. All rights reserved</p>
+            </div>
+          </footer>
+        ) : null}
       </main>
 
+      {!contained ? (
       <footer className="border-t border-[#EAECF1] bg-white py-8">
         <div className="mx-auto max-w-[1280px] px-4 md:px-0">
           <nav className="flex flex-wrap gap-x-8 gap-y-2 text-xs text-[#5A6881]" aria-label="Footer">
@@ -319,6 +378,7 @@ export function SeekHomePage({ onSearch }: SeekHomePageProps) {
           <p className="mt-6 text-xs text-[#5A6881]">© SEEK. All rights reserved</p>
         </div>
       </footer>
+      ) : null}
     </div>
   )
 }

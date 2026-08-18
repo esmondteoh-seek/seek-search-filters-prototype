@@ -1,4 +1,4 @@
-import { forwardRef, useMemo, useRef, useState, type ReactNode } from "react"
+import { forwardRef, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { IconChevronDown } from "@/components/braid/icons"
 import { cn } from "@/lib/utils"
 import type { SearchQuery } from "@/src/hooks/searchQuery"
@@ -39,6 +39,8 @@ interface FilterPillProps {
   mapJobCount?: (draft: FilterState, search: SearchQuery) => number
   /** Show SEEK preview footer when draft changes (default true) */
   showFooter?: boolean
+  /** Apply each filter change immediately (Version B app search sheet) */
+  applyOnChange?: boolean
   /** Popover width matches anchor element width */
   matchAnchorWidth?: boolean
 }
@@ -70,6 +72,7 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
     onApplyFilters,
     mapJobCount,
     showFooter = true,
+    applyOnChange = false,
     matchAnchorWidth = false,
   },
   forwardedRef,
@@ -91,7 +94,14 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
 
   const patchDraft = (patch: Partial<FilterState>) => {
     setDraft((prev) => ({ ...prev, ...patch }))
+    if (applyOnChange) onApplyFilters(patch)
   }
+
+  useEffect(() => {
+    if (!applyOnChange || !open) return
+    setDraft(filters)
+    setBaselineDraft(filters)
+  }, [applyOnChange, open, filters])
 
   const handleOpen = () => {
     if (measureOnly) return

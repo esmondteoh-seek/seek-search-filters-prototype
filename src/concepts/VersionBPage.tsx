@@ -11,6 +11,7 @@ import {
   type VersionBPreviewState,
 } from "@/src/data/versionBPresets"
 import { DEFAULT_FILTERS } from "@/src/hooks/useJobFilters"
+import { readSearchFromUrl } from "@/src/hooks/useAppNavigation"
 
 interface VersionBPageProps {
   filterState: UseJobFiltersReturn
@@ -25,7 +26,9 @@ function useVersionBPreset(
   previewState: VersionBPreviewState,
 ) {
   useEffect(() => {
-    const search = getVersionBSearch(platform, previewState)
+    const fromUrl = readSearchFromUrl()
+    const hasUrlSearch = Boolean(fromUrl.keywords.trim() || fromUrl.location.trim())
+    const search = hasUrlSearch ? fromUrl : getVersionBSearch(platform, previewState)
     const patch = getVersionBFilterPatch(previewState)
     applySearchQuery(search)
     replaceFilters({ ...DEFAULT_FILTERS, ...patch })
