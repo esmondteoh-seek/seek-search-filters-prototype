@@ -12,6 +12,8 @@ interface FilterPopoverProps {
   footer?: ReactNode
   width?: number
   showTitle?: boolean
+  /** When true, popover width follows anchor element width */
+  matchAnchorWidth?: boolean
 }
 
 const SHELL_PADDING = 48
@@ -27,10 +29,18 @@ export function FilterPopover({
   footer,
   width = 360,
   showTitle = false,
+  matchAnchorWidth = false,
 }: FilterPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
   const titleId = useId()
-  const position = usePopoverPosition(open, anchorRef, width, Boolean(footer), showTitle)
+  const position = usePopoverPosition(
+    open,
+    anchorRef,
+    width,
+    Boolean(footer),
+    showTitle,
+    matchAnchorWidth,
+  )
   const { mounted, visible } = useMountTransition(open, 220)
 
   useEffect(() => {
@@ -88,7 +98,7 @@ export function FilterPopover({
       style={{
         top: position.top,
         left: position.left,
-        width,
+        width: position.width,
       }}
     >
       {showTitle && (
@@ -116,8 +126,14 @@ function usePopoverPosition(
   width: number,
   hasFooter: boolean,
   showTitle: boolean,
+  matchAnchorWidth: boolean,
 ) {
-  const [position, setPosition] = useState({ top: 0, left: 0, contentMaxHeight: 400 })
+  const [position, setPosition] = useState({
+    top: 0,
+    left: 0,
+    contentMaxHeight: 400,
+    width,
+  })
 
   useEffect(() => {
     if (!open || !anchorRef.current) return
@@ -129,6 +145,10 @@ function usePopoverPosition(
       const titleBlock = showTitle ? TITLE_BLOCK : 0
       const footerBlock = hasFooter ? FOOTER_BLOCK : 0
       const chrome = SHELL_PADDING + titleBlock + footerBlock
+
+      const resolvedWidth = matchAnchorWidth
+        ? Math.min(rect.width, window.innerWidth - viewportPadding * 2)
+        : width
 
       const spaceBelow = window.innerHeight - rect.bottom - padding - viewportPadding
       const spaceAbove = rect.top - padding - viewportPadding
@@ -144,14 +164,15 @@ function usePopoverPosition(
       }
 
       let left = rect.left
-      if (left + width > window.innerWidth - padding) {
-        left = window.innerWidth - width - padding
+      if (left + resolvedWidth > window.innerWidth - padding) {
+        left = window.innerWidth - resolvedWidth - padding
       }
 
       setPosition({
         top,
         left: Math.max(padding, left),
         contentMaxHeight: Math.max(120, contentMaxHeight),
+        width: resolvedWidth,
       })
     }
 
@@ -162,7 +183,7 @@ function usePopoverPosition(
       window.removeEventListener("resize", update)
       window.removeEventListener("scroll", update, true)
     }
-  }, [open, anchorRef, width, hasFooter, showTitle])
+  }, [open, anchorRef, width, hasFooter, showTitle, matchAnchorWidth])
 
   return position
 }

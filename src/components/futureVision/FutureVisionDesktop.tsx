@@ -7,6 +7,7 @@ import {
   FutureVisionFilterChips,
   VersionBNavyBand,
 } from "@/src/components/futureVision/FutureVisionFilterChips"
+import { FutureVisionLocationRow } from "@/src/components/futureVision/FutureVisionLocationRow"
 import { FutureVisionResults } from "@/src/components/futureVision/FutureVisionResults"
 import { FutureVisionSearchForm } from "@/src/components/futureVision/FutureVisionSearchForm"
 import { useFutureVisionSubmit } from "@/src/components/futureVision/useFutureVisionSubmit"
@@ -60,7 +61,6 @@ export function FutureVisionDesktop({
   const showLocations = isMultiLocation && !locationsHidden
 
   const compact = scrollCompact
-  const hideSiteHeader = bandForceExpanded
   const bandExpanded = !compact || bandForceExpanded
 
   useEffect(() => {
@@ -113,7 +113,7 @@ export function FutureVisionDesktop({
           <SiteHeader
             showDivider={hasPageScrolled && !bandForceExpanded}
             sticky={!compactChrome}
-            hidden={hideSiteHeader}
+            hidden={false}
             instant={headerInstant}
             userName="Riccardo"
           />
@@ -123,62 +123,67 @@ export function FutureVisionDesktop({
           <div
             ref={filterBlockRef}
             className={cn(
-              "sticky z-40 min-w-0",
-              hideSiteHeader ? "top-0" : "top-16",
+              "sticky z-40 min-w-0 top-16",
               (isFilterBlockStuck || bandForceExpanded) && "shadow-md",
-              bandExpanded && "overflow-visible",
+              (bandExpanded || showHangingTabs) && "overflow-visible",
             )}
           >
             <VersionBNavyBand
               className={cn(
+                !bandExpanded && "pt-4",
+                !bandExpanded && !(showHangingTabs && showLocations) && "pb-4",
                 showHangingTabs && showLocations && "pb-0",
-                !bandExpanded && "py-2",
               )}
             >
-              {bandExpanded ? (
-                <>
-                  <FutureVisionSearchForm
-                    filterState={filterState}
-                    onSubmit={handleSubmit}
-                    locationChrome={locationChrome}
-                  />
-                  <FutureVisionFilterChips
-                    filterState={filterState}
-                    platform="desktop"
-                    layout="expanded"
-                    includeLocationRow={showHangingTabs}
-                    hideLocationRow={locationsHidden}
-                    locationRowInstant={instant}
-                  />
-                </>
-              ) : (
-                <div className={cn("flex min-w-0 flex-col", showHangingTabs ? "gap-0" : "gap-2")}>
-                  <div
-                    className={cn(
-                      "flex min-w-0 items-center gap-2 md:gap-3",
-                      isMultiPills
-                        ? "flex-nowrap overflow-x-auto hide-scrollbar"
-                        : "flex-wrap md:flex-nowrap",
-                    )}
-                  >
+              <div className="flex min-w-0 flex-col">
+                {bandExpanded ? (
+                  <div className="flex flex-col gap-3 md:gap-4">
                     <FutureVisionSearchForm
                       filterState={filterState}
-                      compact
-                      onOpenSearch={openSearch}
+                      onSubmit={handleSubmit}
                       locationChrome={locationChrome}
                     />
                     <FutureVisionFilterChips
                       filterState={filterState}
                       platform="desktop"
-                      layout="inline"
-                      onMoreClick={openSearch}
-                      includeLocationRow={showHangingTabs}
-                      hideLocationRow={locationsHidden}
-                      locationRowInstant={instant}
+                      layout="expanded"
+                      includeLocationRow={false}
                     />
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className={cn("flex min-w-0 flex-col", showHangingTabs ? "gap-0" : "gap-2")}>
+                    <div
+                      className={cn(
+                        "flex min-w-0 items-center gap-2 md:gap-3",
+                        isMultiPills
+                          ? "flex-nowrap overflow-x-auto hide-scrollbar"
+                          : "flex-wrap md:flex-nowrap",
+                      )}
+                    >
+                      <FutureVisionSearchForm
+                        filterState={filterState}
+                        compact
+                        onOpenSearch={openSearch}
+                        locationChrome={locationChrome}
+                      />
+                      <FutureVisionFilterChips
+                        filterState={filterState}
+                        platform="desktop"
+                        layout="inline"
+                        onMoreClick={openSearch}
+                        includeLocationRow={false}
+                      />
+                    </div>
+                  </div>
+                )}
+                {showHangingTabs && isMultiLocation ? (
+                  <FutureVisionLocationRow
+                    platform="desktop"
+                    hidden={locationsHidden}
+                    instant={instant}
+                  />
+                ) : null}
+              </div>
             </VersionBNavyBand>
           </div>
         </>
@@ -199,6 +204,7 @@ export function FutureVisionDesktop({
         onClose={closeSheet}
         filterState={filterState}
         onSubmit={submitSearch}
+        platform="desktop"
       />
     </>
   )

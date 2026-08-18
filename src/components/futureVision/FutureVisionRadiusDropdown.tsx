@@ -1,13 +1,11 @@
-import { useMemo, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { RadioGroup, RadioItem, Strong, Text } from "@/components/braid"
 import { IconChevronDown, IconLocation } from "@/components/braid/icons"
 import { useFutureVisionLocations } from "@/src/components/futureVision/FutureVisionLocationsContext"
 import { FilterPopover } from "@/src/components/FilterBar/FilterPopover"
-import { FilterPopoverFooter } from "@/src/components/FilterBar/FilterPopoverFooter"
 import { getDistanceDisplayLabel } from "@/src/components/FilterBar/filterControls"
 import { DISTANCE_FILTER_OPTIONS } from "@/src/data/jobs"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
-import { getFutureVisionScaledJobCount } from "@/src/data/futureVisionPresets"
 import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
 import { type UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { cn } from "@/lib/utils"
@@ -18,13 +16,13 @@ interface FutureVisionRadiusDropdownProps {
   locationChrome?: FutureVisionLocationChrome
 }
 
-/** Results radius control — location pin, listed places, radio list, SEEK preview footer */
+/** Results radius control — location pin, listed places, radio list */
 export function FutureVisionRadiusDropdown({
   filterState,
   platform,
   locationChrome: locationChromeProp,
 }: FutureVisionRadiusDropdownProps) {
-  const { filters, search, applyFilters } = filterState
+  const { filters, applyFilters } = filterState
   const { locations, locationChrome: locationChromeFromContext } = useFutureVisionLocations()
   const locationChrome = locationChromeProp ?? locationChromeFromContext
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -32,23 +30,12 @@ export function FutureVisionRadiusDropdown({
   const [draftDistanceKm, setDraftDistanceKm] = useState(filters.distanceKm)
 
   const appliedDistanceKm = filters.distanceKm
-  const hasDraftChanges = draftDistanceKm !== appliedDistanceKm
   const distanceLabel = getDistanceDisplayLabel(appliedDistanceKm)
   const locationLabel = locations.join(", ")
   const listLocations = locationChrome === "multi-pills"
   const ariaLabel = listLocations
     ? `Showing jobs within ${distanceLabel} of ${locationLabel}. Change distance.`
     : `Showing jobs within ${distanceLabel}. Change distance.`
-
-  const previewCount = useMemo(
-    () =>
-      getFutureVisionScaledJobCount(
-        platform,
-        { ...filters, distanceKm: draftDistanceKm },
-        search,
-      ),
-    [draftDistanceKm, filters, search, platform],
-  )
 
   if (platform === "app" || locations.length === 0) return null
 
@@ -66,15 +53,6 @@ export function FutureVisionRadiusDropdown({
   const handleClose = () => {
     commitDraft(draftDistanceKm)
     setOpen(false)
-  }
-
-  const handleApply = () => {
-    commitDraft(draftDistanceKm)
-    setOpen(false)
-  }
-
-  const handleClearAll = () => {
-    setDraftDistanceKm(50)
   }
 
   return (
@@ -122,15 +100,6 @@ export function FutureVisionRadiusDropdown({
         anchorRef={buttonRef}
         title="Distance"
         width={360}
-        footer={
-          hasDraftChanges ? (
-            <FilterPopoverFooter
-              jobCount={previewCount}
-              onClearAll={handleClearAll}
-              onApply={handleApply}
-            />
-          ) : undefined
-        }
       >
         <RadioGroup
           name="future-vision-distance"

@@ -68,7 +68,7 @@ export function FutureVisionMobileWeb({
           <VersionBNavyBand
             className="min-w-0 px-0 py-0 md:px-0"
             contentClassName={cn(
-              "px-5 pt-5",
+              "gap-4 px-5 pt-5",
               showHangingTabs && showLocations ? "pb-0" : "pb-4",
             )}
           >
@@ -108,6 +108,7 @@ export function FutureVisionMobileWeb({
         onClose={closeSheet}
         filterState={filterState}
         onSubmit={submitSearch}
+        platform="mobile-web"
         contained
       />
     </PhoneFrame>

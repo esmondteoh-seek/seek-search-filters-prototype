@@ -108,6 +108,8 @@ export function VersionBDesktop({ filterState, previewState }: VersionBDesktopPr
                     filterState={filterState}
                     onSubmit={submitSearch}
                     locationPlaceholder="All Australia"
+                    platform="desktop"
+                    previewState={previewState}
                   />
                   <VersionBFilterChips
                     filterState={filterState}

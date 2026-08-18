@@ -120,10 +120,10 @@ function LocationTab({ label, selected, onSelect, onRemove, platform }: Location
     return (
       <div
         className={cn(
-          "flex h-9 max-w-[min(100%,280px)] shrink-0 items-center gap-1.5 rounded-full px-3 text-sm",
+          "flex h-10 max-w-[min(100%,280px)] shrink-0 items-center gap-1.5 rounded-full px-3 text-sm",
           selected
             ? "border border-[#2455C9] bg-[#2455C9] text-white"
-            : "border border-[#EAECF1] bg-[#F0F2F5] text-[#2E3849]",
+            : "border border-[#D2D7DF] bg-white text-[#2E3849]",
         )}
       >
         <button
@@ -149,7 +149,7 @@ function LocationTab({ label, selected, onSelect, onRemove, platform }: Location
             "flex h-6 w-6 shrink-0 items-center justify-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1E47A9]",
             selected
               ? "text-white/90 hover:bg-white/10"
-              : "text-[#697586] hover:bg-[#EAECF1]",
+              : "text-[#697586] hover:bg-[#F5F7FA]",
           )}
           aria-label={`Remove ${label}`}
         >
@@ -174,11 +174,10 @@ export function FutureVisionLocationChips({ platform }: FutureVisionLocationChip
   return (
     <div
       className={cn(
-        "flex min-w-0",
-        isDesktop || isMobileWeb
-          ? "flex-nowrap items-end gap-3 overflow-x-auto hide-scrollbar"
-          : "items-center gap-2 overflow-x-auto hide-scrollbar flex-nowrap",
-        isDesktop && "flex-wrap",
+        "flex min-w-0 flex-nowrap overflow-x-auto hide-scrollbar",
+        isDesktop && "items-end gap-3 scroll-px-5",
+        isMobileWeb && "items-end gap-3 scroll-px-5 px-5",
+        isApp && "items-center gap-3 scroll-px-3 px-3",
       )}
       data-fv-explain="multi-location"
       style={!isDesktop ? { WebkitOverflowScrolling: "touch" } : undefined}
@@ -193,6 +192,11 @@ export function FutureVisionLocationChips({ platform }: FutureVisionLocationChip
           onRemove={() => removeLocation(index)}
         />
       ))}
+      {isDesktop || isMobileWeb ? (
+        <span className="w-5 shrink-0" aria-hidden />
+      ) : isApp ? (
+        <span className="w-3 shrink-0" aria-hidden />
+      ) : null}
     </div>
   )
 }

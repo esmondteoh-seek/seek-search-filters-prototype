@@ -4,6 +4,7 @@ import { FutureVisionLocationField } from "@/src/components/futureVision/FutureV
 import { useFutureVisionLocations } from "@/src/components/futureVision/FutureVisionLocationsContext"
 import {
   formatFutureVisionCompactPill,
+  getFutureVisionScaledJobCount,
   type FutureVisionLocationChrome,
 } from "@/src/data/futureVisionPresets"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
@@ -26,9 +27,10 @@ export function FutureVisionSearchForm({
   onSubmit,
   locationChrome = "multi-pills",
 }: FutureVisionSearchFormProps) {
-  const { draftSearch, updateDraftSearch, search } = filterState
+  const { draftSearch, updateDraftSearch, search, filters } = filterState
   const { locations } = useFutureVisionLocations()
   const pillLabel = formatFutureVisionCompactPill(search.keywords, locations)
+  const seekJobCount = getFutureVisionScaledJobCount("desktop", filters, draftSearch)
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -93,7 +95,7 @@ export function FutureVisionSearchForm({
           ["--tw-ring-offset-color" as string]: VERSION_B_TOKENS.band,
         }}
       >
-        SEEK
+        SEEK {seekJobCount.toLocaleString()} {seekJobCount === 1 ? "job" : "jobs"}
       </button>
     </div>
   )

@@ -181,7 +181,12 @@ export function MobileSearchSheet({
               ) : null}
             </div>
 
-            <StandardFiltersRow filterState={filterState} variant="compact" className="-mx-4 px-4" />
+            <StandardFiltersRow
+              filterState={filterState}
+              variant="compact"
+              showFooter={false}
+              className="-mx-4 px-4"
+            />
           </div>
 
           <div className="flex flex-col gap-2">

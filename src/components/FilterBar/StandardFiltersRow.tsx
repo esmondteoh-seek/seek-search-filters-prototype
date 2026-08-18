@@ -26,6 +26,8 @@ interface StandardFiltersRowProps {
   showSort?: boolean
   /** Wrap pills onto multiple lines instead of horizontal scroll + fade */
   wrap?: boolean
+  /** Show SEEK preview footer in filter dropdowns (default true) */
+  showFooter?: boolean
   className?: string
 }
 
@@ -43,6 +45,7 @@ export function StandardFiltersRow({
   compactLabels = false,
   showSort = false,
   wrap = false,
+  showFooter = true,
   className,
 }: StandardFiltersRowProps) {
   const { filters, clearFilter, updateFilters } = filterState
@@ -81,6 +84,7 @@ export function StandardFiltersRow({
           popoverTitle="Pay"
           popoverWidth={400}
           variant={variant}
+          showFooter={showFooter}
           {...popoverProps}
         >
           <PayFilterContent variant="popover" />
@@ -94,6 +98,7 @@ export function StandardFiltersRow({
           popoverTitle="Classification"
           popoverWidth={360}
           variant={variant}
+          showFooter={showFooter}
           {...popoverProps}
         >
           <ClassificationFilterContent variant="popover" />
@@ -106,6 +111,7 @@ export function StandardFiltersRow({
           onClear={() => clearFilter("workTypes")}
           popoverTitle="Work type"
           variant={variant}
+          showFooter={showFooter}
           {...popoverProps}
         >
           <WorkTypeFilterContent />
@@ -118,6 +124,7 @@ export function StandardFiltersRow({
           onClear={() => clearFilter("remoteOptions")}
           popoverTitle="Remote options"
           variant={variant}
+          showFooter={showFooter}
           {...popoverProps}
         >
           <RemoteFilterContent />
@@ -130,6 +137,7 @@ export function StandardFiltersRow({
           onClear={() => clearFilter("listingTime")}
           popoverTitle="Listing time"
           variant={variant}
+          showFooter={showFooter}
           {...popoverProps}
         >
           <ListingTimeFilterContent />

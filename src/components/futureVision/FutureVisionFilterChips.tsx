@@ -18,7 +18,7 @@ import { countModalFilters } from "@/src/hooks/useJobFilters"
 import { FilterSurfaceButton } from "@/src/components/motion/FilterSurfaceButton"
 import { cn } from "@/lib/utils"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
-import { FutureVisionLocationChips } from "@/src/components/futureVision/FutureVisionLocationChips"
+import { FutureVisionLocationRow } from "@/src/components/futureVision/FutureVisionLocationRow"
 import { useFutureVisionLocations } from "@/src/components/futureVision/FutureVisionLocationsContext"
 import { getFutureVisionScaledJobCount } from "@/src/data/futureVisionPresets"
 import type { SearchQuery } from "@/src/hooks/searchQuery"
@@ -164,6 +164,7 @@ export function FutureVisionFilterChips({
     filters,
     search,
     onApplyFilters: applyFilters,
+    showFooter: false,
     mapJobCount: (draft: FilterState, draftSearch: SearchQuery) =>
       getFutureVisionScaledJobCount(platform, draft, draftSearch),
   }
@@ -258,19 +259,11 @@ export function FutureVisionFilterChips({
 
   const locationRow =
     includeLocationRow && isMultiLocation ? (
-      <div
-        className={cn(
-          "grid",
-          !locationRowInstant && "transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
-          hideLocationRow ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
-        )}
-      >
-        <div className="min-h-0 overflow-hidden">
-          <div className={cn("min-h-0 overflow-hidden", appMode ? "pt-0" : "pt-2")}>
-            <FutureVisionLocationChips platform={platform} />
-          </div>
-        </div>
-      </div>
+      <FutureVisionLocationRow
+        platform={platform}
+        hidden={hideLocationRow}
+        instant={locationRowInstant}
+      />
     ) : null
 
   if (layout === "expanded" && !appMode) {
@@ -287,7 +280,7 @@ export function FutureVisionFilterChips({
 
   if (appMode) {
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-3">
         <div className="flex min-w-0 items-center gap-3 overflow-x-auto hide-scrollbar">
           {personalised}
         </div>
@@ -313,7 +306,7 @@ export function FutureVisionFilterChips({
   if (!locationRow) return inlineRow
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className={cn("flex flex-col gap-3")}>
       {inlineRow}
       {locationRow}
     </div>

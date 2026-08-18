@@ -12,6 +12,8 @@ import { LocationRadiusDropdown } from "@/src/components/FilterBar/LocationRadiu
 import { StandardFiltersRow } from "@/src/components/FilterBar/StandardFiltersRow"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
 import { LAST_SEARCH, SAVED_SEARCHES, type SavedSearchItem } from "@/src/data/savedSearches"
+import { getFutureVisionScaledJobCount } from "@/src/data/futureVisionPresets"
+import type { VersionBPlatform } from "@/src/data/versionBPresets"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { cn } from "@/lib/utils"
 
@@ -20,6 +22,7 @@ interface FutureVisionMobileSearchSheetProps {
   onClose: () => void
   filterState: UseJobFiltersReturn
   onSubmit?: () => void
+  platform: VersionBPlatform
   /** Render inside the phone frame instead of portaling to document.body */
   contained?: boolean
 }
@@ -63,15 +66,18 @@ export function FutureVisionMobileSearchSheet({
   onClose,
   filterState,
   onSubmit,
+  platform,
   contained = false,
 }: FutureVisionMobileSearchSheetProps) {
   const {
     draftSearch,
     updateDraftSearch,
     submitSearch,
+    filters,
   } = filterState
   const { locations } = useFutureVisionLocations()
   const showRadius = locations.length > 0
+  const seekJobCount = getFutureVisionScaledJobCount(platform, filters, draftSearch)
 
   const keywordRef = useRef<HTMLInputElement>(null)
 
@@ -169,6 +175,7 @@ export function FutureVisionMobileSearchSheet({
               filterState={filterState}
               variant="compact"
               wrap
+              showFooter={false}
               className="mt-6"
             />
           </div>
@@ -217,7 +224,7 @@ export function FutureVisionMobileSearchSheet({
             "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2E3849]",
           )}
         >
-          SEEK
+          SEEK {seekJobCount.toLocaleString()} jobs
         </button>
       </div>
     </div>

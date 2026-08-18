@@ -4,6 +4,7 @@ import { LocationRadiusDropdown } from "@/src/components/FilterBar/LocationRadiu
 import { SaveSearchButton } from "@/src/components/shared/searchBand/SaveSearchButton"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
+import { getFilteredJobs } from "@/src/hooks/useJobFilters"
 
 interface SearchBandDesktopExpandedProps {
   filterState: UseJobFiltersReturn
@@ -31,7 +32,9 @@ export function SearchBandDesktopExpanded({
   showLocationRadius = true,
   brandSeekButton = false,
 }: SearchBandDesktopExpandedProps) {
-  const { draftSearch, updateDraftSearch, isSearchSaved, toggleSearchSaved } = filterState
+  const { draftSearch, updateDraftSearch, isSearchSaved, toggleSearchSaved, filters } = filterState
+
+  const seekJobCount = getFilteredJobs(filters, draftSearch).length
 
   if (!expanded) return null
 
@@ -100,7 +103,7 @@ export function SearchBandDesktopExpanded({
             : "bg-[#1C2330] hover:bg-[#0E131B] focus-visible:ring-offset-[#2E3849]",
         )}
       >
-        SEEK
+        SEEK {seekJobCount.toLocaleString()} {seekJobCount === 1 ? "job" : "jobs"}
       </button>
 
       {showSaveSearch && (

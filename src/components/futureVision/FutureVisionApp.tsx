@@ -29,7 +29,7 @@ interface FutureVisionAppProps {
 export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
   const { search, filters, mobileDetailOpen, closeMobileDetail, bookmarkedIds, toggleBookmark } =
     filterState
-  const { locations, selectedLocationIndex, isMultiLocation } = useFutureVisionLocations()
+  const { locations, selectedLocationIndex } = useFutureVisionLocations()
   const { title, subtitle } = formatFutureVisionAppTitle(search.keywords, locations)
   const { submitSearch, openSearchDraft } = useFutureVisionSubmit(filterState)
 
@@ -46,9 +46,9 @@ export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
-  const { hidden: locationsHidden, reveal, instant } = useHideOnScrollDown(scrollRef, {
+  const { hidden: scrollChromeHidden, reveal, instant } = useHideOnScrollDown(scrollRef, {
     forceVisible: sheetOpen,
-    enabled: isMultiLocation && !mobileDetailOpen,
+    enabled: !mobileDetailOpen,
   })
 
   useEffect(() => {
@@ -153,7 +153,7 @@ export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
               filterState={filterState}
               platform="app"
               layout="inline"
-              hideLocationRow={locationsHidden}
+              hideLocationRow={scrollChromeHidden}
               locationRowInstant={instant}
             />
           </div>
@@ -172,45 +172,55 @@ export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
           />
         </div>
 
-        <nav
-          className="flex shrink-0 items-center justify-around border-t border-[#EAECF1] bg-white px-1 py-2"
-          aria-label="App navigation"
+        <div
+          className={cn(
+            "grid shrink-0",
+            !instant && "transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+            scrollChromeHidden ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
+          )}
         >
-          {[
-            { label: "Home", active: true, badge: null as string | null, Icon: AppTabHomeIcon },
-            {
-              label: "Recommended",
-              active: false,
-              badge: "99+",
-              Icon: AppTabRecommendedIcon,
-            },
-            { label: "My Activity", active: false, badge: null, Icon: AppTabActivityIcon },
-            { label: "Profile", active: false, badge: null, Icon: AppTabProfileIcon },
-          ].map((tab) => (
-            <button
-              key={tab.label}
-              type="button"
-              className={cn(
-                "relative flex min-w-[4.5rem] flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] font-medium",
-                tab.active ? "text-[#1E47A9]" : "text-[#697586]",
-              )}
-              aria-current={tab.active ? "page" : undefined}
+          <div className="min-h-0 overflow-hidden">
+            <nav
+              className="flex items-center justify-around border-t border-[#EAECF1] bg-white px-1 py-2"
+              aria-label="App navigation"
             >
-              <span className="relative flex h-6 w-6 items-center justify-center" aria-hidden>
-                <tab.Icon active={tab.active} />
-                {tab.badge ? (
-                  <span
-                    className="absolute -right-2 -top-1 rounded-full px-1 text-[9px] font-bold leading-tight text-white"
-                    style={{ backgroundColor: VERSION_B_TOKENS.seekPink }}
-                  >
-                    {tab.badge}
+              {[
+                { label: "Home", active: true, badge: null as string | null, Icon: AppTabHomeIcon },
+                {
+                  label: "Recommended",
+                  active: false,
+                  badge: "99+",
+                  Icon: AppTabRecommendedIcon,
+                },
+                { label: "My Activity", active: false, badge: null, Icon: AppTabActivityIcon },
+                { label: "Profile", active: false, badge: null, Icon: AppTabProfileIcon },
+              ].map((tab) => (
+                <button
+                  key={tab.label}
+                  type="button"
+                  className={cn(
+                    "relative flex min-w-[4.5rem] flex-col items-center gap-0.5 rounded-lg px-2 py-1 text-[10px] font-medium",
+                    tab.active ? "text-[#1E47A9]" : "text-[#697586]",
+                  )}
+                  aria-current={tab.active ? "page" : undefined}
+                >
+                  <span className="relative flex h-6 w-6 items-center justify-center" aria-hidden>
+                    <tab.Icon active={tab.active} />
+                    {tab.badge ? (
+                      <span
+                        className="absolute -right-2 -top-1 rounded-full px-1 text-[9px] font-bold leading-tight text-white"
+                        style={{ backgroundColor: VERSION_B_TOKENS.seekPink }}
+                      >
+                        {tab.badge}
+                      </span>
+                    ) : null}
                   </span>
-                ) : null}
-              </span>
-              {tab.label}
-            </button>
-          ))}
-        </nav>
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </div>
 
         <div className="flex justify-center pb-2 pt-1">
           <div className="h-1 w-28 rounded-full bg-[#2E3849]/20" aria-hidden />
@@ -221,6 +231,7 @@ export function FutureVisionApp({ filterState }: FutureVisionAppProps) {
           onClose={() => setSheetOpen(false)}
           filterState={filterState}
           onSubmit={handleSheetSubmit}
+          platform="app"
           contained
         />
     </PhoneFrame>

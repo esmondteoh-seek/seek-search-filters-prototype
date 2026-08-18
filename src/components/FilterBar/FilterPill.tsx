@@ -37,6 +37,10 @@ interface FilterPillProps {
   onApplyFilters: (patch: Partial<FilterState>) => void
   /** Optional transform for Apply footer job count (Future Vision marketplace scale) */
   mapJobCount?: (draft: FilterState, search: SearchQuery) => number
+  /** Show SEEK preview footer when draft changes (default true) */
+  showFooter?: boolean
+  /** Popover width matches anchor element width */
+  matchAnchorWidth?: boolean
 }
 
 function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
@@ -65,6 +69,8 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
     search,
     onApplyFilters,
     mapJobCount,
+    showFooter = true,
+    matchAnchorWidth = false,
   },
   forwardedRef,
 ) {
@@ -192,8 +198,9 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
         anchorRef={internalRef}
         title={popoverTitle}
         width={popoverWidth}
+        matchAnchorWidth={matchAnchorWidth}
         footer={
-          hasDraftChanges ? (
+          showFooter && hasDraftChanges ? (
             <FilterPopoverFooter
               jobCount={previewCount}
               onClearAll={handleClearAll}

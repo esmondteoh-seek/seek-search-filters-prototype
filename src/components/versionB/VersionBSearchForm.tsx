@@ -1,7 +1,7 @@
 import { IconLocation, IconSearch } from "@/components/braid/icons"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
-import { formatVersionBCompactSearchLabel } from "@/src/data/versionBPresets"
-import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
+import { formatVersionBCompactSearchLabel, getVersionBDisplayJobCount, type VersionBPlatform, type VersionBPreviewState } from "@/src/data/versionBPresets"
+import { getFilteredJobs, type UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
 import { cn } from "@/lib/utils"
 
@@ -12,6 +12,8 @@ interface VersionBSearchFormProps {
   onOpenSearch?: () => void
   onSubmit?: () => void
   locationPlaceholder?: string
+  platform?: VersionBPlatform
+  previewState?: VersionBPreviewState
 }
 
 /** Version B search — dedicated form (no SearchBandShell) */
@@ -21,9 +23,17 @@ export function VersionBSearchForm({
   onOpenSearch,
   onSubmit,
   locationPlaceholder = "All Australia",
+  platform = "desktop",
+  previewState,
 }: VersionBSearchFormProps) {
-  const { draftSearch, updateDraftSearch, search } = filterState
+  const { draftSearch, updateDraftSearch, search, filters } = filterState
   const pillLabel = formatVersionBCompactSearchLabel(search)
+  const mockCount =
+    previewState !== undefined
+      ? getVersionBDisplayJobCount(platform, previewState)
+      : undefined
+  const seekJobCount =
+    mockCount ?? getFilteredJobs(filters, draftSearch).length
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -99,7 +109,7 @@ export function VersionBSearchForm({
           ["--tw-ring-offset-color" as string]: VERSION_B_TOKENS.band,
         }}
       >
-        SEEK
+        SEEK {seekJobCount.toLocaleString()} {seekJobCount === 1 ? "job" : "jobs"}
       </button>
     </div>
   )
