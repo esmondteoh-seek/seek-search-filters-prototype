@@ -8,7 +8,7 @@ import { StandardFiltersRow } from "@/src/components/FilterBar/StandardFiltersRo
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
 import { getFilteredJobs } from "@/src/hooks/useJobFilters"
 import type { FilterState, UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
-import { normalizeSearchQuery } from "@/src/hooks/searchQuery"
+import { normalizeSearchQuery, type SearchQuery } from "@/src/hooks/searchQuery"
 import { useMountTransition } from "@/src/hooks/useMountTransition"
 
 interface MobileSearchSheetProps {
@@ -29,6 +29,8 @@ interface MobileSearchSheetProps {
   applyOnChange?: boolean
   /** Override apply handler (e.g. Version B blank-SA clearing) */
   onApplyFilters?: (patch: Partial<FilterState>) => void
+  /** Marketplace-scale preview count (Version B) */
+  mapPreviewCount?: (filters: FilterState, search: SearchQuery) => number
 }
 
 function SearchListItem({
@@ -76,6 +78,7 @@ export function MobileSearchSheet({
   onSubmit,
   applyOnChange = false,
   onApplyFilters,
+  mapPreviewCount,
 }: MobileSearchSheetProps) {
   const {
     draftSearch,
@@ -91,8 +94,9 @@ export function MobileSearchSheet({
 
   const previewCount = useMemo(() => {
     const query = normalizeSearchQuery(draftSearch, search)
+    if (mapPreviewCount) return mapPreviewCount(filters, query)
     return getFilteredJobs(filters, query).length
-  }, [draftSearch, search, filters])
+  }, [draftSearch, search, filters, mapPreviewCount])
 
   useEffect(() => {
     if (!open || !mounted) return
@@ -210,6 +214,7 @@ export function MobileSearchSheet({
               wrap
               showFooter={false}
               applyOnChange={applyOnChange}
+              closeOnApply={applyOnChange}
               onApplyFilters={onApplyFilters}
               className="-mx-4 px-4"
             />

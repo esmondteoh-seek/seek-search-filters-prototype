@@ -30,6 +30,8 @@ interface StandardFiltersRowProps {
   showFooter?: boolean
   /** Apply each filter change immediately (Version B) */
   applyOnChange?: boolean
+  /** Close popover after each apply-on-change selection */
+  closeOnApply?: boolean
   /** Override apply handler (e.g. Version B blank-SA clearing) */
   onApplyFilters?: (patch: Partial<FilterState>) => void
   className?: string
@@ -51,6 +53,7 @@ export function StandardFiltersRow({
   wrap = false,
   showFooter = true,
   applyOnChange = false,
+  closeOnApply = false,
   onApplyFilters,
   className,
 }: StandardFiltersRowProps) {
@@ -60,6 +63,7 @@ export function StandardFiltersRow({
     onApplyFilters: onApplyFilters ?? filterState.applyFilters,
     showFooter,
     applyOnChange,
+    closeOnApply,
   }
   const isMobile = variant === "compact"
   const shortLabels = compactLabels || isMobile
@@ -109,6 +113,7 @@ export function StandardFiltersRow({
           popoverWidth={360}
           variant={variant}
           {...popoverProps}
+          closeOnApply={false}
         >
           <ClassificationFilterContent variant="popover" />
         </FilterPill>
@@ -120,6 +125,7 @@ export function StandardFiltersRow({
           onClear={() => clearFilter("workTypes")}
           popoverTitle="Work type"
           variant={variant}
+          closeOnApply={closeOnApply}
           {...popoverProps}
         >
           <WorkTypeFilterContent />
@@ -132,6 +138,7 @@ export function StandardFiltersRow({
           onClear={() => clearFilter("remoteOptions")}
           popoverTitle="Remote options"
           variant={variant}
+          closeOnApply={closeOnApply}
           {...popoverProps}
         >
           <RemoteFilterContent />
@@ -144,6 +151,7 @@ export function StandardFiltersRow({
           onClear={() => clearFilter("listingTime")}
           popoverTitle="Listing time"
           variant={variant}
+          closeOnApply={closeOnApply}
           {...popoverProps}
         >
           <ListingTimeFilterContent />

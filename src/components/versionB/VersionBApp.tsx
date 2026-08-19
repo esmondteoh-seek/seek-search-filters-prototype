@@ -13,7 +13,7 @@ import {
   AppTabRecommendedIcon,
   FilterAppliedDot,
 } from "@/src/components/versionB/VersionBIcons"
-import { formatVersionBAppTitle } from "@/src/data/versionBPresets"
+import { formatVersionBAppTitle, ensureVersionBMinimumJobs } from "@/src/data/versionBPresets"
 import { PhoneFrame } from "@/src/components/shared/PhoneFrame"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { countModalFilters, getFilteredJobs } from "@/src/hooks/useJobFilters"
@@ -35,7 +35,10 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
   const hasFixedFilters = countModalFilters(filters) > 0
 
   const displayJobs = useMemo(
-    () => getFilteredJobs(filtersIgnoringBlankSaLatch(search, filters), search),
+    () =>
+      ensureVersionBMinimumJobs(
+        getFilteredJobs(filtersIgnoringBlankSaLatch(search, filters), search),
+      ),
     [filters, search],
   )
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -205,6 +208,7 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         filterState={filterState}
+        previewState={previewState}
       />
 
       <VersionBStrongApplicantBlankSheet

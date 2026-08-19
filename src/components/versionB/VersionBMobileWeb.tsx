@@ -12,7 +12,7 @@ import { useMobileSearchSheet } from "@/src/hooks/useMobileSearchSheet"
 import { navigateToHome } from "@/src/hooks/useAppNavigation"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { patchClearingBlankSa } from "@/src/lib/isBlankSearch"
-import { formatVersionBCompactSearchLabel } from "@/src/data/versionBPresets"
+import { formatVersionBCompactSearchLabel, getVersionBScaledJobCount } from "@/src/data/versionBPresets"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 
 interface VersionBMobileWebProps {
@@ -85,6 +85,9 @@ export function VersionBMobileWeb({ filterState, previewState }: VersionBMobileW
         contained
         slideFromRight
         applyOnChange
+        mapPreviewCount={(filters, query) =>
+          getVersionBScaledJobCount("mobile-web", previewState, filters, query)
+        }
         onApplyFilters={(patch) =>
           filterState.applyFilters(
             patchClearingBlankSa(filterState.search, filterState.filters, patch),

@@ -3,9 +3,10 @@ import { IconChevronRight, IconClose, IconHeart, IconLocation, IconSearch } from
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
 import { VersionBFixedFilterPills } from "@/src/components/versionB/VersionBFixedFilterPills"
 import { LAST_SEARCH, SAVED_SEARCHES, type SavedSearchItem } from "@/src/data/savedSearches"
-import { normalizeSearchQuery } from "@/src/hooks/searchQuery"
+import { getVersionBScaledJobCount } from "@/src/data/versionBPresets"
+import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
-import { getFilteredJobs } from "@/src/hooks/useJobFilters"
+import { normalizeSearchQuery } from "@/src/hooks/searchQuery"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
 import { useMountTransition } from "@/src/hooks/useMountTransition"
 import { cn } from "@/lib/utils"
@@ -14,6 +15,7 @@ interface VersionBAppSearchSheetProps {
   open: boolean
   onClose: () => void
   filterState: UseJobFiltersReturn
+  previewState: VersionBPreviewState
 }
 
 function IconClock({ className }: { className?: string }) {
@@ -64,7 +66,12 @@ function SearchHistoryItem({
 }
 
 /** Version B app search — Figma Search Bar Improvements, contained in phone frame */
-export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBAppSearchSheetProps) {
+export function VersionBAppSearchSheet({
+  open,
+  onClose,
+  filterState,
+  previewState,
+}: VersionBAppSearchSheetProps) {
   const {
     draftSearch,
     search,
@@ -79,8 +86,8 @@ export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBA
 
   const previewCount = useMemo(() => {
     const query = normalizeSearchQuery(draftSearch, search)
-    return getFilteredJobs(filters, query).length
-  }, [draftSearch, search, filters])
+    return getVersionBScaledJobCount("app", previewState, filters, query)
+  }, [draftSearch, search, filters, previewState])
 
   useEffect(() => {
     if (!open || !mounted) return

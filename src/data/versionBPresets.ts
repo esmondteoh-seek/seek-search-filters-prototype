@@ -1,6 +1,28 @@
 import type { FilterState } from "@/src/hooks/useJobFilters"
-import { DEFAULT_FILTERS } from "@/src/hooks/useJobFilters"
+import {
+  DEFAULT_FILTERS,
+  areFilterStatesEqual,
+  countMatchingJobs,
+} from "@/src/hooks/useJobFilters"
 import type { SearchQuery } from "@/src/hooks/searchQuery"
+import { filtersIgnoringBlankSaLatch } from "@/src/lib/isBlankSearch"
+import { jobs as allJobs, type Job } from "@/src/data/jobs"
+
+/** Version B never shows 0 or empty — floor for counts and visible cards */
+export const VERSION_B_MIN_JOB_COUNT = 10
+
+export function clampVersionBJobCount(count: number): number {
+  return Math.max(VERSION_B_MIN_JOB_COUNT, count)
+}
+
+export function ensureVersionBMinimumJobs(results: Job[]): Job[] {
+  if (results.length >= VERSION_B_MIN_JOB_COUNT) return results
+  const seen = new Set(results.map((job) => job.id))
+  const padding = allJobs
+    .filter((job) => !seen.has(job.id))
+    .slice(0, VERSION_B_MIN_JOB_COUNT - results.length)
+  return [...results, ...padding]
+}
 
 export type VersionBPlatform = "desktop" | "mobile-web" | "app"
 
@@ -245,10 +267,64 @@ export function versionBUsesPresetJobCount(
     return false
   }
   const preset = getVersionBSearch(platform, preview)
+  return searchMatchesPreset(search, preset)
+}
+
+function searchMatchesPreset(search: SearchQuery, preset: SearchQuery): boolean {
   return (
     search.keywords.trim() === preset.keywords.trim() &&
     search.location.trim() === preset.location.trim()
   )
+}
+
+/** Stable ±3–8% jitter so similar filter sets don't always share the same total */
+function stableCountJitter(filters: FilterState, search: SearchQuery): number {
+  const key = JSON.stringify({
+    k: search.keywords.trim(),
+    l: search.location.trim(),
+    f: filters,
+  })
+  let hash = 0
+  for (let i = 0; i < key.length; i++) {
+    hash = (Math.imul(31, hash) + key.charCodeAt(i)) | 0
+  }
+  const unit = (Math.abs(hash) % 10_000) / 10_000
+  const magnitude = 0.03 + unit * 0.05
+  const sign = hash < 0 ? -1 : 1
+  return 1 + sign * magnitude
+}
+
+/**
+ * Marketplace-scale job count that moves with filters on every scenario.
+ * Keeps Figma frame totals at scenario baseline; scales with a small deterministic jitter otherwise.
+ */
+export function getVersionBScaledJobCount(
+  platform: VersionBPlatform,
+  preview: VersionBPreviewState,
+  filters: FilterState,
+  search: SearchQuery,
+): number {
+  const frameCount = getVersionBDisplayJobCount(platform, preview) ?? 0
+  const baselineSearch = getVersionBSearch(platform, preview)
+  const baselineFilters: FilterState = { ...DEFAULT_FILTERS, ...getVersionBFilterPatch(preview) }
+  const effectiveFilters = filtersIgnoringBlankSaLatch(search, filters)
+  const now = countMatchingJobs(effectiveFilters, search)
+  const baseline = countMatchingJobs(baselineFilters, baselineSearch)
+
+  if (now === 0) return clampVersionBJobCount(0)
+  if (frameCount === 0) return clampVersionBJobCount(now)
+
+  const atScenarioBaseline =
+    searchMatchesPreset(search, baselineSearch) &&
+    areFilterStatesEqual(effectiveFilters, baselineFilters)
+
+  if (atScenarioBaseline) return frameCount
+
+  if (baseline === 0) return clampVersionBJobCount(frameCount)
+
+  const scaled = Math.round((now / baseline) * frameCount)
+  const jittered = Math.round(scaled * stableCountJitter(effectiveFilters, search))
+  return clampVersionBJobCount(Math.min(frameCount, jittered))
 }
 
 export function formatVersionBCompactSearchLabel(search: SearchQuery): string {

@@ -12,6 +12,7 @@ import { useCompactSearchChrome } from "@/src/hooks/useCompactSearchChrome"
 import { useMobileSearchSheet } from "@/src/hooks/useMobileSearchSheet"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
+import { getVersionBScaledJobCount } from "@/src/data/versionBPresets"
 import { patchClearingBlankSa } from "@/src/lib/isBlankSearch"
 import { cn } from "@/lib/utils"
 
@@ -155,6 +156,9 @@ export function VersionBDesktop({ filterState, previewState }: VersionBDesktopPr
         brandSeekButton
         slideFromRight
         applyOnChange
+        mapPreviewCount={(filters, query) =>
+          getVersionBScaledJobCount("desktop", previewState, filters, query)
+        }
         onApplyFilters={(patch) =>
           filterState.applyFilters(
             patchClearingBlankSa(filterState.search, filterState.filters, patch),

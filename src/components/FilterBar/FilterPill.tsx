@@ -42,6 +42,8 @@ interface FilterPillProps {
   showFooter?: boolean
   /** Apply each filter change immediately (Version B app search sheet) */
   applyOnChange?: boolean
+  /** Close popover/sheet after each apply-on-change selection */
+  closeOnApply?: boolean
   /** Popover width matches anchor element width */
   matchAnchorWidth?: boolean
   /** popover = floating panel; sheet = app bottom sheet inside phone frame */
@@ -80,6 +82,7 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
     mapJobCount,
     showFooter = true,
     applyOnChange = false,
+    closeOnApply = false,
     matchAnchorWidth = false,
     presentation = "popover",
     sheetShowClearAll = false,
@@ -104,8 +107,17 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
   )
 
   const patchDraft = (patch: Partial<FilterState>) => {
-    setDraft((prev) => ({ ...prev, ...patch }))
-    if (applyOnChange) onApplyFilters(patch)
+    setDraft((prev) => {
+      const next = { ...prev, ...patch }
+      if (applyOnChange) {
+        onApplyFilters(patch)
+        if (closeOnApply) {
+          setBaselineDraft(next)
+          setOpen(false)
+        }
+      }
+      return next
+    })
   }
 
   useEffect(() => {

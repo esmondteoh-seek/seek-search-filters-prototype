@@ -390,6 +390,12 @@ export function sortByStrongApplicantTier(jobs: Job[], sort: SortOption): Job[] 
   return [...sortTier(veryStrong), ...sortTier(strong), ...sortTier(rest)]
 }
 
+/** SEEK listing date — 0 days is "Posted today", not "Posted 0d ago" */
+export function formatPostedLabel(ageDays: number): string {
+  if (ageDays <= 0) return "Posted today"
+  return `Posted ${ageDays}d ago`
+}
+
 /** Prototype expansion — 35+ jobs per common home/SERP search keyword */
 function buildExpandedJobs(): Job[] {
   let globalIndex = 0
@@ -432,7 +438,7 @@ function buildExpandedJobs(): Job[] {
           "Contribute to team goals and continuous improvement",
         ] as [string, string, string],
         description: batch.description,
-        postedLabel: `Posted ${ageDays}d ago`,
+        postedLabel: formatPostedLabel(ageDays),
       }
     }),
   )

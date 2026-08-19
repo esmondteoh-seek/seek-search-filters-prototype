@@ -14,6 +14,7 @@ import { FilterPill } from "@/src/components/FilterBar/FilterPill"
 import type { SearchQuery } from "@/src/hooks/searchQuery"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { patchClearingBlankSa } from "@/src/lib/isBlankSearch"
+import { scrollSearchResultsToTop } from "@/src/lib/scrollSearchResultsToTop"
 
 interface VersionBFixedFilterPillsProps {
   filterState: UseJobFiltersReturn
@@ -32,16 +33,22 @@ export function VersionBFixedFilterPills({
   searchOverride,
   className,
 }: VersionBFixedFilterPillsProps) {
-  const { filters, search, applyFilters, clearFilter } = filterState
+  const { filters, search, applyFilters, clearFilter, closeMobileDetail } = filterState
   const activeSearch = searchOverride ?? search
   const isSheet = presentation === "sheet"
+
+  const handleApplyFilters = (patch: Parameters<typeof applyFilters>[0]) => {
+    applyFilters(patchClearingBlankSa(search, filters, patch))
+    scrollSearchResultsToTop()
+    closeMobileDetail()
+  }
+
   const popoverProps = {
     filters,
     search: activeSearch,
-    onApplyFilters: (patch: Parameters<typeof applyFilters>[0]) =>
-      applyFilters(patchClearingBlankSa(search, filters, patch)),
+    onApplyFilters: handleApplyFilters,
     showFooter: false,
-    applyOnChange: false,
+    applyOnChange: true,
     presentation,
   }
   const contentVariant = isSheet ? ("sheet" as const) : ("popover" as const)
@@ -56,6 +63,7 @@ export function VersionBFixedFilterPills({
         popoverTitle={isSheet ? "Pay (AUD)" : "Pay"}
         popoverWidth={400}
         variant={variant}
+        closeOnApply
         {...popoverProps}
       >
         <PayFilterContent variant={contentVariant} />
@@ -67,6 +75,7 @@ export function VersionBFixedFilterPills({
         onClear={() => clearFilter("workTypes")}
         popoverTitle="Work type"
         variant={variant}
+        closeOnApply
         {...popoverProps}
       >
         <WorkTypeFilterContent variant={contentVariant} />
@@ -78,6 +87,7 @@ export function VersionBFixedFilterPills({
         onClear={() => clearFilter("remoteOptions")}
         popoverTitle="Remote options"
         variant={variant}
+        closeOnApply
         {...popoverProps}
       >
         <RemoteFilterContent variant={contentVariant} />
@@ -92,6 +102,7 @@ export function VersionBFixedFilterPills({
         variant={variant}
         sheetShowClearAll={isSheet}
         sheetTall={isSheet}
+        closeOnApply={false}
         {...popoverProps}
       >
         <ClassificationFilterContent variant={isSheet ? "modal" : contentVariant} />
@@ -103,6 +114,7 @@ export function VersionBFixedFilterPills({
         onClear={() => clearFilter("listingTime")}
         popoverTitle="Listing time"
         variant={variant}
+        closeOnApply
         {...popoverProps}
       >
         <ListingTimeFilterContent variant={contentVariant} />
