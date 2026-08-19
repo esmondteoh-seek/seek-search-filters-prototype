@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { IconFilter } from "@/components/braid/icons"
+import { VersionBAppOnboardingSheet } from "@/src/components/versionB/VersionBAppOnboardingSheet"
 import { VersionBAppSearchSheet } from "@/src/components/versionB/VersionBAppSearchSheet"
+import { VersionBStrongApplicantBlankSheet } from "@/src/components/versionB/VersionBStrongApplicantBlankSheet"
 import { MobileJobDetailView } from "@/src/components/Results/MobileJobDetailView"
 import { VersionBFilterChips } from "@/src/components/versionB/VersionBFilterChips"
 import { VersionBResults } from "@/src/components/versionB/VersionBResults"
@@ -9,6 +11,7 @@ import {
   AppTabHomeIcon,
   AppTabProfileIcon,
   AppTabRecommendedIcon,
+  FilterAppliedDot,
 } from "@/src/components/versionB/VersionBIcons"
 import { formatVersionBAppTitle } from "@/src/data/versionBPresets"
 import { PhoneFrame } from "@/src/components/shared/PhoneFrame"
@@ -16,6 +19,7 @@ import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { countModalFilters, getFilteredJobs } from "@/src/hooks/useJobFilters"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
+import { filtersIgnoringBlankSaLatch, isBlankSearch } from "@/src/lib/isBlankSearch"
 import { cn } from "@/lib/utils"
 
 interface VersionBAppProps {
@@ -28,12 +32,35 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
   const { search, filters, mobileDetailOpen, closeMobileDetail, bookmarkedIds, toggleBookmark } =
     filterState
   const { title, subtitle } = formatVersionBAppTitle(search)
-  const appliedCount = countModalFilters(filters)
-  const showBadge = appliedCount > 0
+  const hasFixedFilters = countModalFilters(filters) > 0
 
-  const displayJobs = useMemo(() => getFilteredJobs(filters, search), [filters, search])
+  const displayJobs = useMemo(
+    () => getFilteredJobs(filtersIgnoringBlankSaLatch(search, filters), search),
+    [filters, search],
+  )
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [refineSheetOpen, setRefineSheetOpen] = useState(false)
+  const [onboardingSheetOpen, setOnboardingSheetOpen] = useState(false)
+  const blankSearch = isBlankSearch(search)
+  const prevStrongApplicant = useRef(filters.strongApplicant)
+
+  useEffect(() => {
+    setOnboardingSheetOpen(previewState === "onboarding" && !refineSheetOpen)
+  }, [previewState, refineSheetOpen])
+
+  useEffect(() => {
+    const turnedOn = filters.strongApplicant && !prevStrongApplicant.current
+    prevStrongApplicant.current = filters.strongApplicant
+
+    if (turnedOn && blankSearch) {
+      setRefineSheetOpen(true)
+      setOnboardingSheetOpen(false)
+    }
+    if (!filters.strongApplicant || !blankSearch) {
+      setRefineSheetOpen(false)
+    }
+  }, [filters.strongApplicant, blankSearch])
 
   useEffect(() => {
     if (displayJobs.length === 0) {
@@ -59,6 +86,7 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
           onBack={() => closeMobileDetail()}
           onBookmark={() => toggleBookmark(selectedJob.id)}
           contained
+          chrome="delivery"
         />
       </PhoneFrame>
     )
@@ -102,22 +130,20 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
               type="button"
               onClick={() => setSheetOpen(true)}
               className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#2E3849] hover:bg-[#F5F7FA]"
-              aria-label={showBadge ? `Filters, ${appliedCount} applied` : "Filters"}
+              aria-label={hasFixedFilters ? "Filters applied" : "Filters"}
             >
               <IconFilter className="h-5 w-5" aria-hidden />
-              {showBadge ? (
-                <span
-                  className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none text-white"
-                  style={{ backgroundColor: VERSION_B_TOKENS.band }}
-                >
-                  {appliedCount}
-                </span>
-              ) : null}
+              {hasFixedFilters ? <FilterAppliedDot /> : null}
             </button>
           </header>
 
           <div className="border-b border-[#EAECF1] bg-white px-4 py-3">
-            <VersionBFilterChips filterState={filterState} platform="app" layout="inline" />
+            <VersionBFilterChips
+              filterState={filterState}
+              platform="app"
+              previewState={previewState}
+              layout="inline"
+            />
           </div>
         </div>
 
@@ -179,6 +205,17 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
         filterState={filterState}
+      />
+
+      <VersionBStrongApplicantBlankSheet
+        open={refineSheetOpen}
+        onClose={() => setRefineSheetOpen(false)}
+        onEditSearch={() => setSheetOpen(true)}
+      />
+
+      <VersionBAppOnboardingSheet
+        open={onboardingSheetOpen && !refineSheetOpen}
+        onClose={() => setOnboardingSheetOpen(false)}
       />
     </PhoneFrame>
   )

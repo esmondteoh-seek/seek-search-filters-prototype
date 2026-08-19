@@ -1,21 +1,13 @@
 import { useEffect, useMemo, useRef } from "react"
-import { IconClose, IconLocation, IconSearch } from "@/components/braid/icons"
-import {
-  ListingTimeFilterContent,
-  PayFilterContent,
-  WorkTypeFilterContent,
-  getListingTimeAppliedLabel,
-  getPayAppliedLabel,
-  getWorkTypeAppliedLabel,
-} from "@/src/components/FilterBar/filterControls"
-import { FilterPill } from "@/src/components/FilterBar/FilterPill"
-import { FilterSurfaceButton } from "@/src/components/motion/FilterSurfaceButton"
+import { IconChevronRight, IconClose, IconHeart, IconLocation, IconSearch } from "@/components/braid/icons"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
+import { VersionBFixedFilterPills } from "@/src/components/versionB/VersionBFixedFilterPills"
 import { LAST_SEARCH, SAVED_SEARCHES, type SavedSearchItem } from "@/src/data/savedSearches"
 import { normalizeSearchQuery } from "@/src/hooks/searchQuery"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { getFilteredJobs } from "@/src/hooks/useJobFilters"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
+import { useMountTransition } from "@/src/hooks/useMountTransition"
 import { cn } from "@/lib/utils"
 
 interface VersionBAppSearchSheetProps {
@@ -23,17 +15,6 @@ interface VersionBAppSearchSheetProps {
   onClose: () => void
   filterState: UseJobFiltersReturn
 }
-
-const RECENT_SEARCHES: SavedSearchItem[] = [LAST_SEARCH, ...SAVED_SEARCHES]
-
-const navyChipTheme = {
-  rounded: "rounded-full",
-  activeBg: "bg-[#2455C9]",
-  inactiveBorder: "border-2 border-white/50",
-  inactiveBg: "bg-transparent",
-  textActive: "text-white focus-visible:ring-white focus-visible:ring-offset-[#2E3849]",
-  textInactive: "text-white hover:bg-white/5 focus-visible:ring-white focus-visible:ring-offset-[#2E3849]",
-} as const
 
 function IconClock({ className }: { className?: string }) {
   return (
@@ -49,11 +30,13 @@ function IconClock({ className }: { className?: string }) {
   )
 }
 
-function RecentSearchItem({
+function SearchHistoryItem({
   item,
+  icon,
   onSelect,
 }: {
   item: SavedSearchItem
+  icon: React.ReactNode
   onSelect: () => void
 }) {
   return (
@@ -63,7 +46,7 @@ function RecentSearchItem({
       className="flex w-full items-center gap-3 rounded-2xl py-3 text-left transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
     >
       <span className="flex h-[43px] w-[43px] shrink-0 items-center justify-center rounded-lg bg-white/[0.08] p-2">
-        <IconClock className="text-white" />
+        {icon}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm text-white">{item.title}</span>
@@ -80,7 +63,7 @@ function RecentSearchItem({
   )
 }
 
-/** Version B app search — Figma board layout, contained in phone frame */
+/** Version B app search — Figma Search Bar Improvements, contained in phone frame */
 export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBAppSearchSheetProps) {
   const {
     draftSearch,
@@ -88,30 +71,22 @@ export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBA
     filters,
     updateDraftSearch,
     submitSearch,
-    applyFilters,
-    toggleSmartFilter,
+    clearAllFilters,
   } = filterState
 
   const keywordRef = useRef<HTMLInputElement>(null)
+  const { mounted, visible, durationMs } = useMountTransition(open, 280)
 
   const previewCount = useMemo(() => {
     const query = normalizeSearchQuery(draftSearch, search)
     return getFilteredJobs(filters, query).length
   }, [draftSearch, search, filters])
 
-  const popoverProps = {
-    filters,
-    search: draftSearch,
-    onApplyFilters: applyFilters,
-    showFooter: false,
-    applyOnChange: true,
-  }
-
   useEffect(() => {
-    if (!open) return
+    if (!open || !mounted) return
     const frame = requestAnimationFrame(() => keywordRef.current?.focus())
     return () => cancelAnimationFrame(frame)
-  }, [open])
+  }, [open, mounted])
 
   useEffect(() => {
     if (!open) return
@@ -127,34 +102,65 @@ export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBA
     onClose()
   }
 
-  const applyRecentSearch = (item: SavedSearchItem) => {
+  const handleClearAll = () => {
+    updateDraftSearch({ keywords: "", location: "" })
+    clearAllFilters()
+  }
+
+  const applySavedSearch = (item: SavedSearchItem) => {
     updateDraftSearch({ keywords: item.title })
     submitSearch()
     onClose()
   }
 
-  if (!open) return null
+  if (!mounted) return null
 
   return (
     <div
-      className="absolute inset-0 z-[100] flex flex-col bg-[#2E3849] overscroll-contain"
+      className={cn(
+        "absolute inset-0 z-[100] flex flex-col overscroll-contain transition-transform",
+        visible ? "translate-x-0" : "translate-x-full",
+      )}
+      style={{
+        transitionDuration: `${durationMs}ms`,
+        backgroundColor: VERSION_B_TOKENS.band,
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="Search jobs"
+      aria-hidden={!visible}
     >
-      <button
-        type="button"
-        onClick={onClose}
-        className="absolute right-5 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
-        aria-label="Close search"
-      >
-        <IconClose className="h-6 w-6" />
-      </button>
+      <div
+        className="pointer-events-none absolute right-0 top-[102px] size-[168px] rounded-full opacity-40"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(230,2,120,0.35) 0%, rgba(230,2,120,0) 70%)",
+        }}
+        aria-hidden
+      />
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-28 pt-14">
+      <header className="relative z-10 flex shrink-0 items-center justify-between px-4 py-2.5">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+          aria-label="Close search"
+        >
+          <IconClose className="h-6 w-6" />
+        </button>
+        <button
+          type="button"
+          onClick={handleClearAll}
+          className="text-sm text-white hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          Clear all
+        </button>
+      </header>
+
+      <div className="relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-28">
         <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-3">
-            <label className="flex h-12 items-center gap-3 rounded-xl bg-white px-4">
+          <div className="flex flex-col gap-4">
+            <label className="flex h-12 items-center gap-4 rounded-lg bg-white px-4">
               <IconSearch className="h-6 w-6 shrink-0 text-[#5A6881]" aria-hidden />
               <input
                 ref={keywordRef}
@@ -164,8 +170,8 @@ export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBA
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSeek()
                 }}
-                placeholder="Job title, keywords or company"
-                className="search-input-no-clear min-w-0 flex-1 bg-transparent text-base text-[#2E3849] outline-none placeholder:text-[#5A6881]"
+                placeholder="Describe what you're looking for"
+                className="search-input-no-clear min-w-0 flex-1 bg-transparent text-sm text-[#2E3849] outline-none placeholder:text-[#5A6881]"
                 aria-label="Keywords"
               />
               <SearchFieldClearButton
@@ -175,7 +181,7 @@ export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBA
               />
             </label>
 
-            <label className="flex h-12 items-center gap-3 rounded-xl bg-white px-4">
+            <label className="flex h-12 items-center gap-4 rounded-lg bg-white px-4">
               <IconLocation className="h-6 w-6 shrink-0 text-[#5A6881]" aria-hidden />
               <input
                 type="text"
@@ -184,8 +190,8 @@ export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBA
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSeek()
                 }}
-                placeholder="Enter city, suburb or region"
-                className="search-input-no-clear min-w-0 flex-1 bg-transparent text-base text-[#2E3849] outline-none placeholder:text-[#5A6881]"
+                placeholder="Enter suburb, city, or region"
+                className="search-input-no-clear min-w-0 flex-1 bg-transparent text-sm text-[#2E3849] outline-none placeholder:text-[#5A6881]"
                 aria-label="Location"
               />
               <SearchFieldClearButton
@@ -195,59 +201,42 @@ export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBA
               />
             </label>
 
-            <div className="flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto hide-scrollbar pt-1">
-              <FilterSurfaceButton
-                role="switch"
-                aria-checked={filters.newToYou}
-                onClick={() => toggleSmartFilter("newToYou")}
-                active={filters.newToYou}
-                theme={navyChipTheme}
-                className="h-10 shrink-0 px-3 text-base"
-              >
-                <span className="whitespace-nowrap">New to you</span>
-              </FilterSurfaceButton>
-              <FilterPill
-                label="Salary"
-                appliedLabel={getPayAppliedLabel(filters)}
-                applied={!!getPayAppliedLabel(filters)}
-                popoverTitle="Pay"
-                popoverWidth={400}
-                variant="compact"
-                {...popoverProps}
-              >
-                <PayFilterContent variant="popover" />
-              </FilterPill>
-              <FilterPill
-                label="Work type"
-                appliedLabel={getWorkTypeAppliedLabel(filters)}
-                applied={!!getWorkTypeAppliedLabel(filters)}
-                popoverTitle="Work type"
-                variant="compact"
-                {...popoverProps}
-              >
-                <WorkTypeFilterContent />
-              </FilterPill>
-              <FilterPill
-                label="Listed"
-                appliedLabel={getListingTimeAppliedLabel(filters, true)}
-                applied={!!getListingTimeAppliedLabel(filters, true)}
-                popoverTitle="Listing time"
-                variant="compact"
-                {...popoverProps}
-              >
-                <ListingTimeFilterContent />
-              </FilterPill>
-            </div>
+            <VersionBFixedFilterPills
+              filterState={filterState}
+              variant="compact"
+              presentation="sheet"
+              searchOverride={draftSearch}
+              className="flex flex-wrap items-center gap-2"
+            />
           </div>
 
           <div className="flex flex-col gap-2">
-            <p className="text-xs font-medium text-white">Recent searches</p>
+            <p className="text-xs font-medium text-white">Last search</p>
+            <SearchHistoryItem
+              item={LAST_SEARCH}
+              icon={<IconClock className="text-white" />}
+              onSelect={() => applySavedSearch(LAST_SEARCH)}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-medium text-white">Saved searches</p>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-xs font-medium text-white hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                See all ({SAVED_SEARCHES.length + 3})
+                <IconChevronRight className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </div>
             <div className="flex flex-col">
-              {RECENT_SEARCHES.map((item) => (
-                <RecentSearchItem
+              {SAVED_SEARCHES.map((item) => (
+                <SearchHistoryItem
                   key={item.id}
                   item={item}
-                  onSelect={() => applyRecentSearch(item)}
+                  icon={<IconHeart className="h-6 w-6 text-white" aria-hidden />}
+                  onSelect={() => applySavedSearch(item)}
                 />
               ))}
             </div>
@@ -255,16 +244,24 @@ export function VersionBAppSearchSheet({ open, onClose, filterState }: VersionBA
         </div>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 border-t border-white/10 bg-[#2E3849] px-5 pb-[max(16px,env(safe-area-inset-bottom))] pt-4">
+      <div
+        className="absolute inset-x-0 bottom-0 z-10 px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-4"
+        style={{
+          background: `linear-gradient(to top, ${VERSION_B_TOKENS.band} 60%, transparent)`,
+        }}
+      >
         <button
           type="button"
           onClick={handleSeek}
           className={cn(
             "flex h-12 w-full items-center justify-center rounded-lg px-4",
             "text-base font-semibold text-white hover:bg-[#C90268]",
-            "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#2E3849]",
+            "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2",
           )}
-          style={{ backgroundColor: VERSION_B_TOKENS.seekPink }}
+          style={{
+            backgroundColor: VERSION_B_TOKENS.seekPink,
+            ["--tw-ring-offset-color" as string]: VERSION_B_TOKENS.band,
+          }}
         >
           SEEK {previewCount.toLocaleString("en-AU")} {previewCount === 1 ? "job" : "jobs"}
         </button>

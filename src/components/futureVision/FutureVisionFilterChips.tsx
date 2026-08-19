@@ -157,6 +157,7 @@ export function FutureVisionFilterChips({
     clearFilter,
     toggleSmartFilter,
     hasUnseenNewToYouOnPage,
+    smartFilterCounts,
   } = filterState
   const { isMultiLocation } = useFutureVisionLocations()
 
@@ -182,7 +183,7 @@ export function FutureVisionFilterChips({
         active={filters.newToYou}
         onToggle={() => toggleSmartFilter("newToYou")}
         showSparkle
-        showNtyDot={hasUnseenNewToYouOnPage}
+        showNtyDot={smartFilterCounts.newToYou > 0 && hasUnseenNewToYouOnPage}
         appMode={appMode}
       />
       <PersonalisedChip

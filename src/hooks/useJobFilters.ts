@@ -420,7 +420,7 @@ export function useJobFilters(options?: { initialSearch?: SearchQuery }) {
   const [isSearchSaved, setIsSearchSaved] = useState(false)
   const smartFilterScrollRef = useRef(false)
 
-  const hasLocation = searchHasLocation(draftSearch)
+  const hasLocation = searchHasLocation(search)
   const showCompanyFilter = useMemo(() => searchIncludesCompanyName(search.keywords), [search.keywords])
   const filteredJobs = useMemo(() => getFilteredJobs(filters, search), [filters, search])
   const smartFilterCounts = useMemo(() => getSmartFilterCounts(filters, search), [filters, search])
@@ -453,7 +453,7 @@ export function useJobFilters(options?: { initialSearch?: SearchQuery }) {
     }
   }, [showCompanyFilter, filters.jobsAtSeek])
 
-  /** Drop radius filter when search has no location (applied or while editing draft) */
+  /** Drop radius filter when applied search has no location */
   useEffect(() => {
     if (!hasLocation && filters.distanceKm !== 50) {
       setFilters((prev) => ({ ...prev, distanceKm: 50 }))

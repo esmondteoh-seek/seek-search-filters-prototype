@@ -24,6 +24,20 @@ export function NtyDot({ className }: NtyDotProps) {
   )
 }
 
+/** App header filter icon — 8px blue dot when fixed filters are applied */
+export function FilterAppliedDot({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "absolute right-1 top-1 size-2 shrink-0 rounded-full",
+        className,
+      )}
+      style={{ backgroundColor: VERSION_B_TOKENS.formAccent }}
+      aria-hidden
+    />
+  )
+}
+
 /** New to you — large outlined 4-point sparkle + small filled sparkle (asset) */
 export function NewToYouIcon({ className }: { className?: string }) {
   return (

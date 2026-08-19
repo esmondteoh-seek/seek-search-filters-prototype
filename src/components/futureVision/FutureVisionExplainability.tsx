@@ -31,7 +31,7 @@ export const FUTURE_VISION_EXPLAIN_ITEMS: ExplainItem[] = [
     id: "multi-location",
     title: "Multi-location",
     description:
-      "Search more than one place, then switch location tabs to view results for each area. Job locations update to match the selected tab.",
+      "Q2 discovery: search the same role across more than one place in a single search. This concept is tab-scoped (Concept B). The recommended default to test is a merged list of jobs in any selected place (Concept A).",
   },
 ]
 

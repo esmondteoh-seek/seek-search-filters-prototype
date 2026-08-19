@@ -11,6 +11,7 @@ import { PhoneFrame } from "@/src/components/shared/PhoneFrame"
 import { useMobileSearchSheet } from "@/src/hooks/useMobileSearchSheet"
 import { navigateToHome } from "@/src/hooks/useAppNavigation"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
+import { patchClearingBlankSa } from "@/src/lib/isBlankSearch"
 import { formatVersionBCompactSearchLabel } from "@/src/data/versionBPresets"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 
@@ -28,7 +29,7 @@ export function VersionBMobileWeb({ filterState, previewState }: VersionBMobileW
 
   return (
     <PhoneFrame className="bg-white">
-      <header className="flex shrink-0 items-center justify-between border-b border-[#EAECF1] bg-white px-4 py-3">
+      <header className="flex shrink-0 items-center justify-between border-b border-[#EAECF1] bg-white px-5 py-3">
         <button
           type="button"
           onClick={() => navigateToHome()}
@@ -49,11 +50,12 @@ export function VersionBMobileWeb({ filterState, previewState }: VersionBMobileW
 
       {!hideSearchChrome ? (
         <div className="shrink-0">
-          <VersionBNavyBand className="px-4 py-4">
+          <VersionBNavyBand className="p-4" contentClassName="gap-3">
             <VersionBMobileSearchPill label={pillLabel} onOpen={openSheet} />
             <VersionBFilterChips
               filterState={filterState}
               platform="mobile-web"
+              previewState={previewState}
               layout="inline"
               onMoreClick={openSheet}
             />
@@ -80,6 +82,14 @@ export function VersionBMobileWeb({ filterState, previewState }: VersionBMobileW
         filterState={filterState}
         showLocationRadius={false}
         brandSeekButton
+        contained
+        slideFromRight
+        applyOnChange
+        onApplyFilters={(patch) =>
+          filterState.applyFilters(
+            patchClearingBlankSa(filterState.search, filterState.filters, patch),
+          )
+        }
       />
     </PhoneFrame>
   )

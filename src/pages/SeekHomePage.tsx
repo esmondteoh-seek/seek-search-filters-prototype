@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { IconFilter, IconLocation, IconSearch } from "@/components/braid/icons"
+import { IconLocation, IconSearch } from "@/components/braid/icons"
 import { cn } from "@/lib/utils"
 import {
   HomeClassificationSelect,
@@ -10,9 +10,11 @@ import {
   resolveRecentSearchQuery,
   resolveSavedSearchQuery,
 } from "@/src/components/home/HomeFeedSections"
+import { HomeMoreOptionsRow } from "@/src/components/home/HomeMoreOptionsRow"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
 import { SiteHeader } from "@/src/components/SiteHeader"
 import { useScrollAwayHeader } from "@/src/hooks/useScrollAwayHeader"
+import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import {
   HOME_RECENT_SEARCHES,
   HOME_RECOMMENDED_JOBS,
@@ -20,9 +22,11 @@ import {
   HOME_SIDEBAR_SAVED_SEARCHES,
 } from "@/src/data/homeFeed"
 import type { SearchQuery } from "@/src/hooks/searchQuery"
+import { markVersionBFromHome } from "@/src/lib/versionBHomeSession"
 
 interface SeekHomePageProps {
   onSearch: (query: SearchQuery) => void
+  filterState?: UseJobFiltersReturn
   userName?: string
   /** Force stacked mobile hero (PhoneFrame — ignores viewport width) */
   forceMobile?: boolean
@@ -35,6 +39,7 @@ interface SeekHomePageProps {
 /** SEEK Career Feed home — Figma Home-Career-Feed FY26 (desktop 12667:105561, mobile 12667:104931) */
 export function SeekHomePage({
   onSearch,
+  filterState,
   userName = "Michael",
   forceMobile = false,
   hideSiteHeader = false,
@@ -43,6 +48,7 @@ export function SeekHomePage({
   const [keywords, setKeywords] = useState("")
   const [classification, setClassification] = useState("")
   const [location, setLocation] = useState("")
+  const [moreOptionsExpanded, setMoreOptionsExpanded] = useState(false)
   const [viewportMobile, setViewportMobile] = useState(forceMobile)
 
   useEffect(() => {
@@ -55,11 +61,13 @@ export function SeekHomePage({
   }, [forceMobile])
 
   const isMobileLayout = forceMobile || viewportMobile
+  const pagePaddingX = isMobileLayout ? "px-5" : "px-4 md:px-0"
   const { hidden: headerHidden, instant: headerInstant } = useScrollAwayHeader(
     !hideSiteHeader && !isMobileLayout,
   )
 
   const submit = (query: SearchQuery = { keywords: keywords || classification, location }) => {
+    markVersionBFromHome()
     onSearch({
       keywords: (query.keywords || classification).trim(),
       location: query.location.trim(),
@@ -101,26 +109,25 @@ export function SeekHomePage({
         className={cn(contained && "min-h-0 flex-1 overflow-y-auto overscroll-contain")}
       >
         {/* Hero search */}
-        <section className="relative overflow-hidden bg-[#051A49]">
-          <div
-            className="pointer-events-none absolute -left-24 top-0 h-full w-[280px] opacity-90 md:-left-16 md:w-[360px]"
-            aria-hidden
-          >
-            <div
-              className="absolute left-0 top-1/2 h-[420px] w-[420px] -translate-y-1/2 rounded-full"
-              style={{
-                background: "radial-gradient(circle, rgba(230,2,120,0.55) 0%, rgba(230,2,120,0.15) 45%, transparent 70%)",
-              }}
-            />
-            <div
-              className="absolute -left-12 top-8 h-[280px] w-[280px] rounded-full"
-              style={{
-                background: "radial-gradient(circle, rgba(255,120,180,0.35) 0%, transparent 65%)",
-              }}
-            />
+        <section className="relative overflow-visible bg-[#051A49]">
+          <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+            <div className="absolute -left-24 top-0 h-full w-[280px] opacity-90 md:-left-16 md:w-[360px]">
+              <div
+                className="absolute left-0 top-1/2 h-[420px] w-[420px] -translate-y-1/2 rounded-full"
+                style={{
+                  background: "radial-gradient(circle, rgba(230,2,120,0.55) 0%, rgba(230,2,120,0.15) 45%, transparent 70%)",
+                }}
+              />
+              <div
+                className="absolute -left-12 top-8 h-[280px] w-[280px] rounded-full"
+                style={{
+                  background: "radial-gradient(circle, rgba(255,120,180,0.35) 0%, transparent 65%)",
+                }}
+              />
+            </div>
           </div>
 
-          <div className="relative mx-auto max-w-[1280px] px-4 py-6 md:px-0 md:py-8">
+          <div className={cn("relative z-10 mx-auto max-w-[1280px] py-6 md:py-8", pagePaddingX)}>
             <h1 className="sr-only">Perform a job search</h1>
 
             {/* Desktop */}
@@ -171,19 +178,6 @@ export function SeekHomePage({
                   className="h-12 shrink-0 rounded-lg bg-[#E60278] px-8 text-base font-medium text-white hover:bg-[#CC0269] focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#051A49]"
                 >
                   SEEK
-                </button>
-              </div>
-
-              <div className="mt-4 flex justify-end">
-                <button
-                  type="button"
-                  className={cn(
-                    "inline-flex h-10 items-center gap-2 rounded-lg border-2 border-white/70 px-4 text-sm font-medium text-white",
-                    "hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                  )}
-                >
-                  <IconFilter className="h-5 w-5" aria-hidden />
-                  Filters
                 </button>
               </div>
             </div>
@@ -243,12 +237,21 @@ export function SeekHomePage({
                 SEEK
               </button>
             </div>
+
+            {filterState ? (
+              <HomeMoreOptionsRow
+                filterState={filterState}
+                expanded={moreOptionsExpanded}
+                onExpandedChange={setMoreOptionsExpanded}
+                className={cn(isMobileLayout ? "mt-6" : "mt-4")}
+              />
+            ) : null}
           </div>
         </section>
 
         {/* Recent searches */}
         <section className={cn("border-b border-[#EAECF1] bg-white py-4", !isMobileLayout && "md:py-5")}>
-          <div className="mx-auto max-w-[1280px] px-4 md:px-0">
+          <div className={cn("mx-auto max-w-[1280px]", pagePaddingX)}>
             <div className="flex gap-4 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {HOME_RECENT_SEARCHES.map((item) => (
                 <HomeRecentSearchChip
@@ -302,7 +305,8 @@ export function SeekHomePage({
         <section className={cn("bg-[#F7F8FB] py-8", !isMobileLayout && "md:py-10")}>
           <div
             className={cn(
-              "mx-auto flex max-w-[1280px] px-4 md:px-0",
+              "mx-auto flex max-w-[1280px]",
+              pagePaddingX,
               isMobileLayout ? "flex-col gap-6" : "gap-10 lg:gap-16",
             )}
           >
@@ -348,7 +352,7 @@ export function SeekHomePage({
 
         {contained ? (
           <footer className="border-t border-[#EAECF1] bg-white py-6">
-            <div className="px-4">
+            <div className={pagePaddingX}>
               <nav
                 className="flex flex-wrap gap-x-6 gap-y-2 text-xs text-[#5A6881]"
                 aria-label="Footer"
@@ -367,7 +371,7 @@ export function SeekHomePage({
 
       {!contained ? (
       <footer className="border-t border-[#EAECF1] bg-white py-8">
-        <div className="mx-auto max-w-[1280px] px-4 md:px-0">
+        <div className={cn("mx-auto max-w-[1280px]", pagePaddingX)}>
           <nav className="flex flex-wrap gap-x-8 gap-y-2 text-xs text-[#5A6881]" aria-label="Footer">
             {["About SEEK", "Terms & conditions", "Security & Privacy"].map((label) => (
               <a key={label} href="#" className="hover:text-[#2E3849] hover:underline">

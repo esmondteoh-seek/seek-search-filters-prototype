@@ -12,6 +12,7 @@ interface MobileJobDetailViewProps {
   vsab?: boolean
   /** Fill the phone frame instead of the viewport */
   contained?: boolean
+  chrome?: "default" | "delivery"
 }
 
 /** Full-screen job detail on mobile with back navigation to SERP */
@@ -22,6 +23,7 @@ export function MobileJobDetailView({
   onBookmark,
   vsab = false,
   contained = false,
+  chrome = "default",
 }: MobileJobDetailViewProps) {
   useEffect(() => {
     if (contained) return
@@ -57,6 +59,7 @@ export function MobileJobDetailView({
           onBookmark={onBookmark}
           hideActions
           vsab={vsab}
+          chrome={chrome}
         />
       </div>
 

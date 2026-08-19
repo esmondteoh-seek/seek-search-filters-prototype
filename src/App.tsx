@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react"
+import { useCallback, useEffect, useMemo } from "react"
 import { useJobFilters } from "@/src/hooks/useJobFilters"
 import { useConceptParam } from "@/src/hooks/useConceptParam"
 import { isFutureVisionConcept } from "@/src/concepts/index"
@@ -8,14 +8,22 @@ import { SeekHomePage, useSeekDocumentTitle } from "@/src/pages/SeekHomePage"
 import { VersionBHomePage } from "@/src/components/versionB/VersionBHomePage"
 import { PrototypeLibraryPage } from "@/src/pages/PrototypeLibraryPage"
 import { DEFAULT_SEARCH } from "@/src/hooks/searchQuery"
-import { readAppView, readSearchFromUrl, redirectPrototypeToJobsIfNeeded, useAppNavigation } from "@/src/hooks/useAppNavigation"
+import {
+  readAppView,
+  readSearchFromUrl,
+  redirectPrototypeToJobsIfNeeded,
+  useAppNavigation,
+} from "@/src/hooks/useAppNavigation"
 import { useLibraryNavigation } from "@/src/hooks/useLibraryNavigation"
 import { useVersionBPlatformParam } from "@/src/hooks/useVersionBPlatformParam"
 import { useVersionBPreviewState } from "@/src/hooks/useVersionBPreviewState"
+import { getVersionBFilterPatch, getVersionBSearch, type VersionBPlatform, type VersionBPreviewState } from "@/src/data/versionBPresets"
+import { DEFAULT_FILTERS } from "@/src/hooks/useJobFilters"
 import {
   FutureVisionExplainabilityProvider,
   FutureVisionWhatsNewPanel,
 } from "@/src/components/futureVision/FutureVisionExplainability"
+import { VersionBScenarioPanel } from "@/src/components/versionB/VersionBScenarioPanel"
 
 function resolveInitialSearch() {
   if (readAppView() !== "jobs") return DEFAULT_SEARCH
@@ -27,7 +35,7 @@ function resolveInitialSearch() {
 export default function App() {
   const initialSearch = useMemo(() => resolveInitialSearch(), [])
   const filterState = useJobFilters({ initialSearch })
-  const { applySearchQuery, search } = filterState
+  const { applySearchQuery, search, replaceFilters } = filterState
   const { conceptId, inPrototypeMode } = useConceptParam()
   const { view, navigateToJobs, replaceJobsSearchInUrl } = useAppNavigation()
   const { folderId, openFolder, goToRoot } = useLibraryNavigation()
@@ -35,7 +43,7 @@ export default function App() {
   const isFutureVision = isFutureVisionConcept(conceptId)
   const usesPlatformParam = isVersionB || isFutureVision
   const { platform, setPlatform } = useVersionBPlatformParam(usesPlatformParam)
-  const { previewState } = useVersionBPreviewState(isVersionB)
+  const { previewState, setPreviewState } = useVersionBPreviewState(isVersionB)
 
   useSeekDocumentTitle(view, search)
 
@@ -45,7 +53,7 @@ export default function App() {
 
   useEffect(() => {
     if (!inPrototypeMode || view !== "jobs") return
-    if (isFutureVisionConcept(conceptId) || conceptId === "version-b" || conceptId === "mls-framing") return
+    if (isFutureVisionConcept(conceptId) || conceptId === "version-b" || conceptId === "mls-framing" || conceptId === "vb-context") return
     const fromUrl = readSearchFromUrl()
     if (fromUrl.keywords || fromUrl.location) {
       applySearchQuery(fromUrl)
@@ -64,6 +72,41 @@ export default function App() {
     navigateToJobs(query)
   }
 
+  const openVersionBSerp = useCallback(
+    (nextPlatform: VersionBPlatform, nextPreview: VersionBPreviewState) => {
+      const preset = getVersionBSearch(nextPlatform, nextPreview)
+      applySearchQuery(preset)
+      replaceFilters({ ...DEFAULT_FILTERS, ...getVersionBFilterPatch(nextPreview) })
+      navigateToJobs(preset)
+    },
+    [applySearchQuery, replaceFilters, navigateToJobs],
+  )
+
+  const handleVersionBPlatformChange = useCallback(
+    (next: VersionBPlatform) => {
+      setPlatform(next)
+      if (view === "home") {
+        openVersionBSerp(next, previewState)
+      }
+    },
+    [setPlatform, view, previewState, openVersionBSerp],
+  )
+
+  const handleVersionBScenarioChange = useCallback(
+    (next: VersionBPreviewState) => {
+      setPreviewState(next)
+      if (view === "home") {
+        openVersionBSerp(platform, next)
+      }
+    },
+    [setPreviewState, view, platform, openVersionBSerp],
+  )
+
+  useEffect(() => {
+    if (!isVersionB || view !== "home" || platform !== "app") return
+    openVersionBSerp("app", previewState)
+  }, [isVersionB, view, platform, previewState, openVersionBSerp])
+
   if (!inPrototypeMode || !conceptId) {
     return (
       <PrototypeLibraryPage
@@ -78,7 +121,9 @@ export default function App() {
     <PrototypeChrome
       conceptId={conceptId}
       platform={usesPlatformParam ? platform : undefined}
-      onPlatformChange={usesPlatformParam ? setPlatform : undefined}
+      onPlatformChange={
+        isVersionB ? handleVersionBPlatformChange : usesPlatformParam ? setPlatform : undefined
+      }
     />
   )
 
@@ -86,15 +131,17 @@ export default function App() {
     return (
       <>
         {isVersionB ? (
-          <VersionBHomePage
-            onSearch={handleHomeSearch}
-            platform={platform}
-            previewState={previewState}
-          />
+          <VersionBHomePage onSearch={handleHomeSearch} filterState={filterState} platform={platform} />
         ) : (
-          <SeekHomePage onSearch={handleHomeSearch} />
+          <SeekHomePage onSearch={handleHomeSearch} filterState={filterState} />
         )}
         {chrome}
+        {isVersionB ? (
+          <VersionBScenarioPanel
+            previewState={previewState}
+            onPreviewStateChange={handleVersionBScenarioChange}
+          />
+        ) : null}
       </>
     )
   }
@@ -108,6 +155,12 @@ export default function App() {
         previewState={previewState}
       />
       {chrome}
+      {isVersionB ? (
+        <VersionBScenarioPanel
+          previewState={previewState}
+          onPreviewStateChange={handleVersionBScenarioChange}
+        />
+      ) : null}
       {isFutureVision ? <FutureVisionWhatsNewPanel /> : null}
     </>
   )

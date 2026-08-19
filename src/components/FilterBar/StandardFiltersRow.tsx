@@ -1,4 +1,4 @@
-import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
+import type { FilterState, UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { cn } from "@/lib/utils"
 import {
   ClassificationFilterContent,
@@ -28,6 +28,10 @@ interface StandardFiltersRowProps {
   wrap?: boolean
   /** Show SEEK preview footer in filter dropdowns (default true) */
   showFooter?: boolean
+  /** Apply each filter change immediately (Version B) */
+  applyOnChange?: boolean
+  /** Override apply handler (e.g. Version B blank-SA clearing) */
+  onApplyFilters?: (patch: Partial<FilterState>) => void
   className?: string
 }
 
@@ -46,10 +50,17 @@ export function StandardFiltersRow({
   showSort = false,
   wrap = false,
   showFooter = true,
+  applyOnChange = false,
+  onApplyFilters,
   className,
 }: StandardFiltersRowProps) {
   const { filters, clearFilter, updateFilters } = filterState
-  const popoverProps = filterPopoverProps(filterState)
+  const popoverProps = {
+    ...filterPopoverProps(filterState),
+    onApplyFilters: onApplyFilters ?? filterState.applyFilters,
+    showFooter,
+    applyOnChange,
+  }
   const isMobile = variant === "compact"
   const shortLabels = compactLabels || isMobile
 
@@ -84,7 +95,6 @@ export function StandardFiltersRow({
           popoverTitle="Pay"
           popoverWidth={400}
           variant={variant}
-          showFooter={showFooter}
           {...popoverProps}
         >
           <PayFilterContent variant="popover" />
@@ -98,7 +108,6 @@ export function StandardFiltersRow({
           popoverTitle="Classification"
           popoverWidth={360}
           variant={variant}
-          showFooter={showFooter}
           {...popoverProps}
         >
           <ClassificationFilterContent variant="popover" />
@@ -111,7 +120,6 @@ export function StandardFiltersRow({
           onClear={() => clearFilter("workTypes")}
           popoverTitle="Work type"
           variant={variant}
-          showFooter={showFooter}
           {...popoverProps}
         >
           <WorkTypeFilterContent />
@@ -124,7 +132,6 @@ export function StandardFiltersRow({
           onClear={() => clearFilter("remoteOptions")}
           popoverTitle="Remote options"
           variant={variant}
-          showFooter={showFooter}
           {...popoverProps}
         >
           <RemoteFilterContent />
@@ -137,7 +144,6 @@ export function StandardFiltersRow({
           onClear={() => clearFilter("listingTime")}
           popoverTitle="Listing time"
           variant={variant}
-          showFooter={showFooter}
           {...popoverProps}
         >
           <ListingTimeFilterContent />

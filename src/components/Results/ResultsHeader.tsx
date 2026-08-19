@@ -6,11 +6,13 @@ import { cn } from "@/lib/utils"
 export interface ResultsHeaderProps {
   count: number
   isLoading?: boolean
+  /** When set, replaces the "{count} jobs" label (e.g. blank search "All jobs") */
+  title?: string
   sort?: SortOption
   onSortChange?: (sort: SortOption) => void
 }
 
-export function ResultsHeader({ count, isLoading, sort, onSortChange }: ResultsHeaderProps) {
+export function ResultsHeader({ count, isLoading, title, sort, onSortChange }: ResultsHeaderProps) {
   const showSort = sort != null && onSortChange != null
 
   return (
@@ -18,6 +20,8 @@ export function ResultsHeader({ count, isLoading, sort, onSortChange }: ResultsH
       <div aria-live="polite" aria-atomic="true">
         {isLoading ? (
           <div className="h-7 w-28 shimmer rounded" aria-label="Updating results…" />
+        ) : title ? (
+          <p className="text-lg font-medium leading-[27px] text-black">{title}</p>
         ) : (
           <p className="text-lg font-medium tabular-nums leading-[27px] text-black">
             {count.toLocaleString("en-AU")} {count === 1 ? "job" : "jobs"}

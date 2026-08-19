@@ -172,7 +172,7 @@ function JobDetailBody({
     setHeroSrc(heroUrl)
   }, [heroUrl])
 
-  const showAppliedBanner = Boolean(job.appliedOn)
+  const showAppliedBanner = Boolean(job.appliedOn) && !isDelivery
   const strongApplicantTier = getStrongApplicantTier(job)
   const showStrongApplicantBanner =
     isPage &&

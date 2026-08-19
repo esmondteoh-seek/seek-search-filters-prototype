@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { VersionBApp } from "@/src/components/versionB/VersionBApp"
 import { VersionBDesktop } from "@/src/components/versionB/VersionBDesktop"
 import { VersionBMobileWeb } from "@/src/components/versionB/VersionBMobileWeb"
@@ -7,11 +7,13 @@ import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import {
   getVersionBFilterPatch,
   getVersionBSearch,
+  versionBAppliesScenarioPreset,
   type VersionBPlatform,
   type VersionBPreviewState,
 } from "@/src/data/versionBPresets"
 import { DEFAULT_FILTERS } from "@/src/hooks/useJobFilters"
-import { readSearchFromUrl } from "@/src/hooks/useAppNavigation"
+import { consumeVersionBFromHome } from "@/src/lib/versionBHomeSession"
+import { useVersionBScenarioEffects } from "@/src/hooks/useVersionBScenarioEffects"
 
 interface VersionBPageProps {
   filterState: UseJobFiltersReturn
@@ -25,13 +27,28 @@ function useVersionBPreset(
   platform: VersionBPlatform,
   previewState: VersionBPreviewState,
 ) {
+  const prevPreview = useRef<VersionBPreviewState | null>(null)
+
   useEffect(() => {
-    const fromUrl = readSearchFromUrl()
-    const hasUrlSearch = Boolean(fromUrl.keywords.trim() || fromUrl.location.trim())
-    const search = hasUrlSearch ? fromUrl : getVersionBSearch(platform, previewState)
-    const patch = getVersionBFilterPatch(previewState)
-    applySearchQuery(search)
-    replaceFilters({ ...DEFAULT_FILTERS, ...patch })
+    const apply = () => {
+      applySearchQuery(getVersionBSearch(platform, previewState))
+      replaceFilters({ ...DEFAULT_FILTERS, ...getVersionBFilterPatch(previewState) })
+    }
+
+    const isFirstMount = prevPreview.current === null
+    const fromHome = isFirstMount ? consumeVersionBFromHome() : false
+    const skipFiltersFromHome = isFirstMount && fromHome && previewState === "filters"
+
+    const returningToFilters =
+      previewState === "filters" &&
+      prevPreview.current !== null &&
+      prevPreview.current !== "filters"
+
+    if (!skipFiltersFromHome && (versionBAppliesScenarioPreset(previewState) || returningToFilters)) {
+      apply()
+    }
+
+    prevPreview.current = previewState
   }, [platform, previewState, applySearchQuery, replaceFilters])
 }
 
@@ -39,9 +56,10 @@ function useVersionBPreset(
 export function VersionBPage({
   filterState,
   platform = "desktop",
-  previewState = "default",
+  previewState = "filters",
 }: VersionBPageProps) {
   useVersionBPreset(filterState.applySearchQuery, filterState.replaceFilters, platform, previewState)
+  useVersionBScenarioEffects(previewState)
 
   if (platform === "app") {
     return (

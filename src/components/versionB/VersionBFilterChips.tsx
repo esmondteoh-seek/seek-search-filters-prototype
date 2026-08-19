@@ -1,36 +1,24 @@
 import { IconFilter } from "@/components/braid/icons"
 import { motion, useReducedMotion } from "motion/react"
-import { useEffect, useState, type ReactNode } from "react"
-import {
-  ClassificationFilterContent,
-  ListingTimeFilterContent,
-  PayFilterContent,
-  RemoteFilterContent,
-  WorkTypeFilterContent,
-  getClassificationAppliedLabel,
-  getListingTimeAppliedLabel,
-  getPayAppliedLabel,
-  getRemoteAppliedLabel,
-  getWorkTypeAppliedLabel,
-} from "@/src/components/FilterBar/filterControls"
-import { FilterPill } from "@/src/components/FilterBar/FilterPill"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { NtyDot, StrongApplicantIcon } from "@/src/components/versionB/VersionBIcons"
+import { VersionBFixedFilterPills } from "@/src/components/versionB/VersionBFixedFilterPills"
+import { VersionBFilterOnboardingTooltip } from "@/src/components/versionB/VersionBFilterOnboardingTooltip"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { countModalFilters } from "@/src/hooks/useJobFilters"
-import { FilterSurfaceButton } from "@/src/components/motion/FilterSurfaceButton"
+import { FilterSurfaceButton, filterPillThemes } from "@/src/components/motion/FilterSurfaceButton"
 import { motionTokens } from "@/src/lib/motionTokens"
+import { consumeVersionBHomeMoreOptions } from "@/src/lib/versionBHomeSession"
+import {
+  isBlankSearchWithoutOtherFilters,
+  patchClearingBlankSa,
+} from "@/src/lib/isBlankSearch"
+import { scrollSearchResultsToTop } from "@/src/lib/scrollSearchResultsToTop"
 import { cn } from "@/lib/utils"
-import type { VersionBPlatform } from "@/src/data/versionBPresets"
+import type { VersionBPlatform, VersionBPreviewState } from "@/src/data/versionBPresets"
 
-const navyChipTheme = {
-  rounded: "rounded-full",
-  activeBg: "bg-[#2455C9]",
-  inactiveBorder: "border-2 border-white/50",
-  inactiveBg: "bg-transparent",
-  textActive: "text-white focus-visible:ring-white focus-visible:ring-offset-[#051A49]",
-  textInactive: "text-white hover:bg-white/5 focus-visible:ring-white focus-visible:ring-offset-[#051A49]",
-} as const
+const navyChipTheme = filterPillThemes.navy
 
 const appChipTheme = {
   rounded: "rounded-full",
@@ -41,9 +29,15 @@ const appChipTheme = {
   textInactive: "text-[#2E3849] hover:bg-[#F7F8FB] focus-visible:ring-[#1E47A9] focus-visible:ring-offset-2",
 } as const
 
+function skipChipEntranceForPreview(preview: VersionBPreviewState): boolean {
+  if (preview === "scrolled") return true
+  return !consumeVersionBHomeMoreOptions()
+}
+
 interface VersionBFilterChipsProps {
   filterState: UseJobFiltersReturn
   platform: VersionBPlatform
+  previewState?: VersionBPreviewState
   /** expanded = full filter row on desktop; inline = scrolled / mobile compact */
   layout?: "expanded" | "inline"
   onMoreClick?: () => void
@@ -56,6 +50,8 @@ function PersonalisedChip({
   showNtyDot = false,
   showDiamond = false,
   appMode = false,
+  compactNavy = false,
+  ariaChecked,
 }: {
   label: string
   active: boolean
@@ -63,8 +59,12 @@ function PersonalisedChip({
   showNtyDot?: boolean
   showDiamond?: boolean
   appMode?: boolean
+  compactNavy?: boolean
+  /** Accessible checked state when it differs from visual active (e.g. SA on blank search) */
+  ariaChecked?: boolean
 }) {
   const theme = appMode ? appChipTheme : navyChipTheme
+  const checked = ariaChecked ?? active
   const iconClass = appMode
     ? active
       ? "text-white"
@@ -74,12 +74,16 @@ function PersonalisedChip({
   return (
     <FilterSurfaceButton
       role="switch"
-      aria-checked={active}
+      aria-checked={checked}
       onClick={onToggle}
       active={active}
       theme={theme}
-      className={cn("h-10 shrink-0 gap-2 px-3 text-base", appMode && "gap-1.5")}
-      contentClassName="gap-2"
+      className={cn(
+        "h-10 shrink-0 gap-1.5 px-4 text-base",
+        appMode && "gap-1.5 px-3",
+        compactNavy && "gap-1 px-3 text-sm",
+      )}
+      contentClassName={cn("gap-1.5", !appMode && "gap-2")}
     >
       {showDiamond ? <StrongApplicantIcon className={iconClass} /> : null}
       <span className="whitespace-nowrap">{label}</span>
@@ -92,10 +96,12 @@ function MoreChip({
   appliedCount,
   onClick,
   appMode = false,
+  compactNavy = false,
 }: {
   appliedCount: number
   onClick?: () => void
   appMode?: boolean
+  compactNavy?: boolean
 }) {
   const hasApplied = appliedCount > 0
   const theme = appMode ? appChipTheme : navyChipTheme
@@ -105,8 +111,11 @@ function MoreChip({
       onClick={onClick}
       active={hasApplied}
       theme={theme}
-      className="relative h-10 shrink-0 gap-2 px-3 text-base font-normal"
-      contentClassName="gap-2"
+      className={cn(
+        "relative h-10 shrink-0 gap-1.5 px-4 text-base font-normal",
+        compactNavy && "gap-1 px-3 text-sm",
+      )}
+      contentClassName="gap-1.5"
       aria-label={
         hasApplied
           ? `Open more filters, ${appliedCount} applied`
@@ -127,33 +136,70 @@ function MoreChip({
   )
 }
 
-/** Personalised chips fade in and push fixed filters right on mount */
-function AnimatedPersonalisedFilters({ children }: { children: ReactNode }) {
+const chipEntranceSpring = { type: "spring" as const, stiffness: 200, damping: 38 }
+
+/** Personalised chips slide in from the left and push fixed filters right on mount */
+function AnimatedPersonalisedFilters({
+  children,
+  onEntranceComplete,
+  skipEntrance = false,
+  compactNavy = false,
+}: {
+  children: ReactNode
+  onEntranceComplete?: () => void
+  skipEntrance?: boolean
+  compactNavy?: boolean
+}) {
+  const gapClass = compactNavy ? "gap-2" : "gap-3"
   const reduceMotion = useReducedMotion()
-  const [revealed, setRevealed] = useState(Boolean(reduceMotion))
+  const [revealed, setRevealed] = useState(Boolean(reduceMotion || skipEntrance))
+  const completeRef = useRef(onEntranceComplete)
+  completeRef.current = onEntranceComplete
 
   useEffect(() => {
-    if (reduceMotion) return
+    if (skipEntrance || reduceMotion) {
+      completeRef.current?.()
+      return
+    }
+    setRevealed(false)
     const id = requestAnimationFrame(() => setRevealed(true))
     return () => cancelAnimationFrame(id)
-  }, [reduceMotion])
+  }, [skipEntrance, reduceMotion])
+
+  if (skipEntrance || reduceMotion) {
+    return <div className={cn("flex w-max shrink-0 items-center", gapClass)}>{children}</div>
+  }
 
   return (
     <motion.div
       layout
-      className="flex shrink-0 overflow-hidden"
+      className={cn(
+        "grid w-max shrink-0",
+        revealed ? "overflow-visible" : "overflow-hidden",
+      )}
       initial={false}
-      animate={{
-        opacity: revealed ? 1 : 0,
-        width: revealed ? "auto" : 0,
-      }}
-      transition={{
-        opacity: { duration: motionTokens.duration.slow, ease: motionTokens.ease.out },
-        width: { duration: motionTokens.duration.slow, ease: motionTokens.ease.out },
-        layout: { duration: motionTokens.duration.slow, ease: motionTokens.ease.out },
-      }}
+      animate={{ gridTemplateColumns: revealed ? "1fr" : "0fr" }}
+      transition={{ gridTemplateColumns: chipEntranceSpring }}
     >
-      <div className="flex items-center gap-3 pr-3">{children}</div>
+      <div className={cn("min-w-0", revealed ? "overflow-visible" : "overflow-hidden")}>
+        <motion.div
+          className={cn("flex items-center", gapClass)}
+          initial={false}
+          animate={{
+            opacity: revealed ? 1 : 0,
+            x: revealed ? 0 : -16,
+          }}
+          transition={{
+            opacity: { duration: 0.45, ease: motionTokens.ease.out },
+            x: chipEntranceSpring,
+          }}
+          onAnimationComplete={() => {
+            if (revealed) completeRef.current?.()
+          }}
+        >
+          {children}
+        </motion.div>
+      </div>
     </motion.div>
   )
 }
@@ -162,24 +208,47 @@ function FilterChipRow({
   personalised,
   trailing,
   className,
+  onChipEntranceComplete,
+  skipMotion = false,
+  compactNavy = false,
 }: {
   personalised: ReactNode
   trailing: ReactNode
   className?: string
+  onChipEntranceComplete?: () => void
+  skipMotion?: boolean
+  compactNavy?: boolean
 }) {
-  return (
-    <motion.div
-      layout
-      className={cn(
-        "flex min-w-0 flex-nowrap items-center overflow-x-auto hide-scrollbar",
-        className,
-      )}
-      style={{ WebkitOverflowScrolling: "touch" }}
-    >
-      <AnimatedPersonalisedFilters>{personalised}</AnimatedPersonalisedFilters>
-      <motion.div layout className="flex shrink-0 items-center gap-3">
+  const rowClass = cn(
+    "flex min-w-0 flex-wrap items-center gap-3 overflow-visible",
+    compactNavy && "gap-2",
+    className,
+  )
+
+  if (skipMotion) {
+    return (
+      <div className={rowClass}>
+        <AnimatedPersonalisedFilters
+          skipEntrance
+          compactNavy={compactNavy}
+          onEntranceComplete={onChipEntranceComplete}
+        >
+          {personalised}
+        </AnimatedPersonalisedFilters>
         {trailing}
-      </motion.div>
+      </div>
+    )
+  }
+
+  return (
+    <motion.div layout className={rowClass}>
+      <AnimatedPersonalisedFilters
+        compactNavy={compactNavy}
+        onEntranceComplete={onChipEntranceComplete}
+      >
+        {personalised}
+      </AnimatedPersonalisedFilters>
+      {trailing}
     </motion.div>
   )
 }
@@ -188,6 +257,7 @@ function FilterChipRow({
 export function VersionBFilterChips({
   filterState,
   platform,
+  previewState = "filters",
   layout = "expanded",
   onMoreClick,
 }: VersionBFilterChipsProps) {
@@ -195,105 +265,101 @@ export function VersionBFilterChips({
     filters,
     search,
     applyFilters,
-    clearFilter,
     toggleSmartFilter,
     hasUnseenNewToYouOnPage,
+    smartFilterCounts,
   } = filterState
 
-  const popoverProps = { filters, search, onApplyFilters: applyFilters }
   const appMode = platform === "app"
   const mobileWeb = platform === "mobile-web"
+  const compactNavy = mobileWeb && layout === "inline"
   const ntyLabel = mobileWeb ? "New" : "New to you"
   const appliedCount = countModalFilters(filters)
+  const skipHomeEntrance = useState(() => skipChipEntranceForPreview(previewState))[0]
+  const skipMotion =
+    skipHomeEntrance ||
+    previewState === "scrolled" ||
+    (platform === "desktop" && layout === "inline")
+
+  const showOnboarding = !appMode
+  const [chipsReady, setChipsReady] = useState(skipMotion)
+
+  useEffect(() => {
+    if (skipMotion) {
+      setChipsReady(true)
+      return
+    }
+    setChipsReady(false)
+  }, [skipMotion, previewState])
 
   const personalised = (
     <>
-      <PersonalisedChip
-        label={ntyLabel}
-        active={filters.newToYou}
-        onToggle={() => toggleSmartFilter("newToYou")}
-        showNtyDot={hasUnseenNewToYouOnPage}
-        appMode={appMode}
-      />
+      <VersionBFilterOnboardingTooltip
+        enabled={showOnboarding}
+        chipsReady={chipsReady}
+        previewState={previewState}
+      >
+        <PersonalisedChip
+          label={ntyLabel}
+          active={filters.newToYou}
+          onToggle={() => {
+            if (
+              !filters.newToYou &&
+              isBlankSearchWithoutOtherFilters(search, filters) &&
+              filters.strongApplicant
+            ) {
+              applyFilters({ newToYou: true, strongApplicant: false })
+              scrollSearchResultsToTop()
+              return
+            }
+            toggleSmartFilter("newToYou")
+          }}
+          showNtyDot={smartFilterCounts.newToYou > 0 && hasUnseenNewToYouOnPage}
+          appMode={appMode}
+          compactNavy={compactNavy}
+        />
+      </VersionBFilterOnboardingTooltip>
       <PersonalisedChip
         label="Strong applicant"
-        active={filters.strongApplicant}
-        onToggle={() => toggleSmartFilter("strongApplicant")}
+        active={
+          filters.strongApplicant &&
+          !isBlankSearchWithoutOtherFilters(search, filters)
+        }
+        ariaChecked={filters.strongApplicant}
+        onToggle={() => {
+          if (isBlankSearchWithoutOtherFilters(search, filters)) {
+            if (filters.strongApplicant) {
+              scrollSearchResultsToTop()
+              return
+            }
+            applyFilters({ strongApplicant: true })
+            return
+          }
+          toggleSmartFilter("strongApplicant")
+        }}
         showDiamond
         appMode={appMode}
+        compactNavy={compactNavy}
       />
     </>
   )
 
-  const fixedPills = (
-    <>
-      <FilterPill
-        label="Pay"
-        appliedLabel={getPayAppliedLabel(filters)}
-        applied={!!getPayAppliedLabel(filters)}
-        onClear={() => clearFilter("payMin")}
-        popoverTitle="Pay"
-        popoverWidth={400}
-        variant="navy"
-        {...popoverProps}
-      >
-        <PayFilterContent variant="popover" />
-      </FilterPill>
-      <FilterPill
-        label="Type"
-        appliedLabel={getWorkTypeAppliedLabel(filters)}
-        applied={!!getWorkTypeAppliedLabel(filters)}
-        onClear={() => clearFilter("workTypes")}
-        popoverTitle="Work type"
-        variant="navy"
-        {...popoverProps}
-      >
-        <WorkTypeFilterContent />
-      </FilterPill>
-      <FilterPill
-        label="Remote"
-        appliedLabel={getRemoteAppliedLabel(filters)}
-        applied={!!getRemoteAppliedLabel(filters)}
-        onClear={() => clearFilter("remoteOptions")}
-        popoverTitle="Remote options"
-        variant="navy"
-        {...popoverProps}
-      >
-        <RemoteFilterContent />
-      </FilterPill>
-      <FilterPill
-        label="Classification"
-        appliedLabel={getClassificationAppliedLabel(filters)}
-        applied={!!getClassificationAppliedLabel(filters)}
-        onClear={() => clearFilter("classifications")}
-        popoverTitle="Classification"
-        popoverWidth={360}
-        variant="navy"
-        {...popoverProps}
-      >
-        <ClassificationFilterContent variant="popover" />
-      </FilterPill>
-      <FilterPill
-        label="Listing time"
-        appliedLabel={getListingTimeAppliedLabel(filters, true)}
-        applied={!!getListingTimeAppliedLabel(filters, true)}
-        onClear={() => clearFilter("listingTime")}
-        popoverTitle="Listing time"
-        variant="navy"
-        {...popoverProps}
-      >
-        <ListingTimeFilterContent />
-      </FilterPill>
-    </>
-  )
+  const fixedPills = <VersionBFixedFilterPills filterState={filterState} />
 
   if (layout === "expanded" && !appMode) {
-    return <FilterChipRow personalised={personalised} trailing={fixedPills} />
+    return (
+      <FilterChipRow
+        personalised={personalised}
+        trailing={fixedPills}
+        skipMotion={skipMotion}
+        onChipEntranceComplete={() => setChipsReady(true)}
+      />
+    )
   }
 
   if (appMode) {
     return (
-      <div className="flex min-w-0 items-center gap-3 overflow-x-auto hide-scrollbar">
+      <div className="flex min-w-0 items-center gap-3 overflow-visible">
         {personalised}
       </div>
     )
@@ -302,12 +368,15 @@ export function VersionBFilterChips({
   return (
     <FilterChipRow
       personalised={personalised}
-      className={mobileWeb ? "-mx-5 scroll-px-5 px-5" : undefined}
+      skipMotion={skipMotion}
+      compactNavy={compactNavy}
+      onChipEntranceComplete={() => setChipsReady(true)}
       trailing={
-        <>
-          <MoreChip appliedCount={appliedCount} onClick={onMoreClick} />
-          {mobileWeb ? <span className="w-5 shrink-0" aria-hidden /> : null}
-        </>
+        <MoreChip
+          appliedCount={appliedCount}
+          onClick={onMoreClick}
+          compactNavy={compactNavy}
+        />
       }
     />
   )
@@ -325,7 +394,7 @@ export function VersionBNavyBand({
 }) {
   return (
     <section
-      className={cn("relative px-4 py-4 md:px-0", className)}
+      className={cn("relative overflow-visible px-4 py-4 md:px-0", className)}
       style={{ backgroundColor: VERSION_B_TOKENS.band }}
     >
       <div

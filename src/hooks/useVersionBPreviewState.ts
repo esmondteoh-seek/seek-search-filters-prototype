@@ -3,11 +3,22 @@ import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 
 const PARAM = "vbState"
 
+const VALID_STATES = new Set<VersionBPreviewState>([
+  "onboarding",
+  "blank",
+  "filters",
+  "selected",
+  "scrolled",
+])
+
 export function readVersionBPreviewFromUrl(): VersionBPreviewState {
-  if (typeof window === "undefined") return "default"
+  if (typeof window === "undefined") return "filters"
   const value = new URLSearchParams(window.location.search).get(PARAM)
-  if (value === "selected" || value === "scrolled") return value
-  return "default"
+  if (value === "default" || value === "hover") return "filters"
+  if (value && VALID_STATES.has(value as VersionBPreviewState)) {
+    return value as VersionBPreviewState
+  }
+  return "filters"
 }
 
 function writeVersionBPreviewToUrl(state: VersionBPreviewState) {
@@ -18,7 +29,7 @@ function writeVersionBPreviewToUrl(state: VersionBPreviewState) {
 
 export function useVersionBPreviewState(enabled: boolean) {
   const [previewState, setPreviewStateInternal] = useState<VersionBPreviewState>(() =>
-    enabled ? readVersionBPreviewFromUrl() : "default",
+    enabled ? readVersionBPreviewFromUrl() : "filters",
   )
 
   useEffect(() => {

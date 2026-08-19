@@ -1,22 +1,26 @@
-import { useEffect } from "react"
 import { SeekLogo } from "@/components/seek-logo"
 import { IconChevronDown } from "@/components/braid/icons"
 import { SeekHomePage } from "@/src/pages/SeekHomePage"
 import { PhoneFrame } from "@/src/components/shared/PhoneFrame"
 import { VersionBRoot } from "@/src/components/versionB/VersionBRoot"
 import type { VersionBPlatform } from "@/src/data/versionBPresets"
-import { getVersionBSearch } from "@/src/data/versionBPresets"
-import type { VersionBPreviewState } from "@/src/data/versionBPresets"
+import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import type { SearchQuery } from "@/src/hooks/searchQuery"
 import { navigateToHome } from "@/src/hooks/useAppNavigation"
 
 interface VersionBHomePageProps {
   onSearch: (query: SearchQuery) => void
+  filterState: UseJobFiltersReturn
   platform?: VersionBPlatform
-  previewState?: VersionBPreviewState
 }
 
-function VersionBMobileWebHomeFrame({ onSearch }: { onSearch: (query: SearchQuery) => void }) {
+function VersionBMobileWebHomeFrame({
+  onSearch,
+  filterState,
+}: {
+  onSearch: (query: SearchQuery) => void
+  filterState: UseJobFiltersReturn
+}) {
   return (
     <PhoneFrame className="bg-white">
       <header className="flex shrink-0 items-center justify-between border-b border-[#EAECF1] bg-white px-4 py-3">
@@ -40,6 +44,7 @@ function VersionBMobileWebHomeFrame({ onSearch }: { onSearch: (query: SearchQuer
 
       <SeekHomePage
         onSearch={onSearch}
+        filterState={filterState}
         userName="Riccardo"
         forceMobile
         hideSiteHeader
@@ -54,31 +59,20 @@ function VersionBMobileWebHomeFrame({ onSearch }: { onSearch: (query: SearchQuer
 }
 
 /** Version B Career Feed home — desktop full page; mobile web in phone frame */
-export function VersionBHomePage({
-  onSearch,
-  platform = "desktop",
-  previewState = "default",
-}: VersionBHomePageProps) {
-  const { view } = useAppNavigation()
-
-  useEffect(() => {
-    if (platform !== "app" || view !== "home") return
-    onSearch(getVersionBSearch("app", previewState))
-  }, [platform, previewState, view, onSearch])
-
+export function VersionBHomePage({ onSearch, filterState, platform = "desktop" }: VersionBHomePageProps) {
   if (platform === "app") return null
 
   if (platform === "mobile-web") {
     return (
       <VersionBRoot className="bg-[#E8ECF2]">
-        <VersionBMobileWebHomeFrame onSearch={onSearch} />
+        <VersionBMobileWebHomeFrame onSearch={onSearch} filterState={filterState} />
       </VersionBRoot>
     )
   }
 
   return (
     <VersionBRoot className="min-h-screen bg-white">
-      <SeekHomePage onSearch={onSearch} userName="Riccardo" />
+      <SeekHomePage onSearch={onSearch} filterState={filterState} userName="Riccardo" />
     </VersionBRoot>
   )
 }

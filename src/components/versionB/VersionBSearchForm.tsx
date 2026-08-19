@@ -1,7 +1,7 @@
 import { IconLocation, IconSearch } from "@/components/braid/icons"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
-import { formatVersionBCompactSearchLabel, getVersionBDisplayJobCount, versionBUsesPresetJobCount, type VersionBPlatform, type VersionBPreviewState } from "@/src/data/versionBPresets"
-import { getFilteredJobs, type UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
+import { formatVersionBCompactSearchLabel } from "@/src/data/versionBPresets"
+import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
 import { cn } from "@/lib/utils"
 
@@ -12,8 +12,6 @@ interface VersionBSearchFormProps {
   onOpenSearch?: () => void
   onSubmit?: () => void
   locationPlaceholder?: string
-  platform?: VersionBPlatform
-  previewState?: VersionBPreviewState
 }
 
 /** Version B search — dedicated form (no SearchBandShell) */
@@ -22,17 +20,10 @@ export function VersionBSearchForm({
   compact = false,
   onOpenSearch,
   onSubmit,
-  locationPlaceholder = "All Australia",
-  platform = "desktop",
-  previewState,
+  locationPlaceholder = "Enter suburb, city, or region",
 }: VersionBSearchFormProps) {
-  const { draftSearch, updateDraftSearch, search, filters } = filterState
+  const { draftSearch, updateDraftSearch, search } = filterState
   const pillLabel = formatVersionBCompactSearchLabel(search)
-  const usePresetCount =
-    previewState !== undefined &&
-    versionBUsesPresetJobCount(platform, previewState, search)
-  const mockCount = usePresetCount ? getVersionBDisplayJobCount(platform, previewState) : undefined
-  const seekJobCount = mockCount ?? getFilteredJobs(filters, draftSearch).length
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
@@ -68,7 +59,8 @@ export function VersionBSearchForm({
           value={draftSearch.keywords}
           onChange={(e) => updateDraftSearch({ keywords: e.target.value })}
           onKeyDown={handleKeyDown}
-          className="search-input-no-clear min-w-0 flex-1 bg-transparent text-base text-[#2E3849] outline-none"
+          placeholder="Describe what you're looking for (role, industry, skills...)"
+          className="search-input-no-clear min-w-0 flex-1 bg-transparent text-base text-[#2E3849] outline-none placeholder:text-[#5A6881]"
           aria-label="Keywords"
         />
         <SearchFieldClearButton
@@ -108,7 +100,7 @@ export function VersionBSearchForm({
           ["--tw-ring-offset-color" as string]: VERSION_B_TOKENS.band,
         }}
       >
-        SEEK {seekJobCount.toLocaleString()} {seekJobCount === 1 ? "job" : "jobs"}
+        SEEK
       </button>
     </div>
   )
@@ -127,13 +119,13 @@ export function VersionBMobileSearchPill({
       type="button"
       onClick={onOpen}
       className={cn(
-        "flex h-10 w-full items-center gap-2 rounded-full bg-white px-3 text-left",
+        "flex h-9 w-full items-center gap-2 rounded-full bg-white px-3 text-left",
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2",
       )}
       style={{ ["--tw-ring-offset-color" as string]: VERSION_B_TOKENS.band }}
       aria-label={`Search: ${label}`}
     >
-      <IconSearch className="h-4 w-4 shrink-0 text-[#5A6881]" aria-hidden />
+      <IconSearch className="h-[18px] w-[18px] shrink-0 text-[#5A6881]" aria-hidden />
       <span className="min-w-0 flex-1 truncate text-sm text-[#2E3849]">{label}</span>
     </button>
   )

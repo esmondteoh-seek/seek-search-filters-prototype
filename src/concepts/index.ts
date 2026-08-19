@@ -5,6 +5,8 @@ import { StrongApplicantFilterPage } from "@/src/concepts/StrongApplicantFilterP
 import { VersionAPage } from "@/src/concepts/VersionAPage"
 import { VersionBPage } from "@/src/concepts/VersionBPage"
 import { FutureVisionPage } from "@/src/concepts/FutureVisionPage"
+import { MultiLocationFramingPage } from "@/src/pages/MultiLocationFramingPage"
+import { VersionBContextPage } from "@/src/pages/VersionBContextPage"
 import type { ConceptDef, ConceptPageProps } from "@/src/concepts/types"
 import type { FutureVisionLocationChrome } from "@/src/data/futureVisionPresets"
 
@@ -53,6 +55,16 @@ export const concepts: ConceptDef[] = [
     id: "future-vision",
     label: "Multi-pills",
     component: FutureVisionPage,
+  },
+  {
+    id: "vb-context",
+    label: "Context",
+    component: VersionBContextPage,
+  },
+  {
+    id: "mls-framing",
+    label: "Multi-location framing",
+    component: MultiLocationFramingPage,
   },
 ]
 

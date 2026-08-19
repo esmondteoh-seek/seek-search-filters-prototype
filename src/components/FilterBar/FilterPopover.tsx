@@ -20,6 +20,10 @@ const SHELL_PADDING = 48
 const TITLE_BLOCK = 52
 const FOOTER_BLOCK = 76
 
+function findPhoneFrame(anchor: HTMLElement | null): HTMLElement | null {
+  return anchor?.closest("[data-phone-frame]") ?? null
+}
+
 export function FilterPopover({
   open,
   onClose,
@@ -83,7 +87,12 @@ export function FilterPopover({
 
   if (!mounted) return null
 
-  return createPortal(
+  const portalTarget =
+    position.contained && anchorRef.current
+      ? findPhoneFrame(anchorRef.current) ?? document.body
+      : document.body
+
+  const popover = (
     <div
       ref={popoverRef}
       role="dialog"
@@ -91,7 +100,9 @@ export function FilterPopover({
       aria-label={title}
       aria-labelledby={showTitle ? titleId : undefined}
       className={cn(
-        "fixed z-[110] w-max max-w-[calc(100vw-16px)] rounded-2xl bg-white p-6",
+        position.contained ? "absolute z-[110]" : "fixed z-[110]",
+        "w-max rounded-2xl bg-white p-6",
+        position.contained ? "max-w-[calc(100%-16px)]" : "max-w-[calc(100vw-16px)]",
         "shadow-[0px_0px_8px_rgba(28,35,48,0.08),0px_8px_16px_-4px_rgba(28,35,48,0.08)]",
         visible ? "filter-popover-enter" : "filter-popover-exit pointer-events-none",
       )}
@@ -115,9 +126,10 @@ export function FilterPopover({
         {children}
       </div>
       {footer ? <div className="shrink-0">{footer}</div> : null}
-    </div>,
-    document.body,
+    </div>
   )
+
+  return createPortal(popover, portalTarget)
 }
 
 function usePopoverPosition(
@@ -133,46 +145,68 @@ function usePopoverPosition(
     left: 0,
     contentMaxHeight: 400,
     width,
+    contained: false,
   })
 
   useEffect(() => {
     if (!open || !anchorRef.current) return
 
     const update = () => {
-      const rect = anchorRef.current!.getBoundingClientRect()
+      const anchor = anchorRef.current!
+      const rect = anchor.getBoundingClientRect()
+      const frame = findPhoneFrame(anchor)
+      const contained = Boolean(frame)
+      const bounds = frame
+        ? frame.getBoundingClientRect()
+        : {
+            top: 0,
+            left: 0,
+            right: window.innerWidth,
+            bottom: window.innerHeight,
+          }
+
       const padding = 8
       const viewportPadding = 16
       const titleBlock = showTitle ? TITLE_BLOCK : 0
       const footerBlock = hasFooter ? FOOTER_BLOCK : 0
       const chrome = SHELL_PADDING + titleBlock + footerBlock
 
+      const boundsWidth = bounds.right - bounds.left
       const resolvedWidth = matchAnchorWidth
-        ? Math.min(rect.width, window.innerWidth - viewportPadding * 2)
-        : width
+        ? Math.min(rect.width, boundsWidth - viewportPadding * 2)
+        : Math.min(width, boundsWidth - viewportPadding * 2)
 
-      const spaceBelow = window.innerHeight - rect.bottom - padding - viewportPadding
-      const spaceAbove = rect.top - padding - viewportPadding
+      const spaceBelow = bounds.bottom - rect.bottom - padding - viewportPadding
+      const spaceAbove = rect.top - bounds.top - padding - viewportPadding
       const availableBelow = Math.min(560, Math.max(160, spaceBelow))
       const availableAbove = Math.min(560, Math.max(160, spaceAbove))
 
-      let top = rect.bottom + padding
+      let topViewport = rect.bottom + padding
       let contentMaxHeight = availableBelow - chrome
 
       if (contentMaxHeight < 120 && availableAbove > availableBelow) {
         contentMaxHeight = availableAbove - chrome
-        top = Math.max(viewportPadding, rect.top - padding - Math.min(availableAbove, contentMaxHeight + chrome))
+        topViewport = Math.max(
+          bounds.top + viewportPadding,
+          rect.top - padding - Math.min(availableAbove, contentMaxHeight + chrome),
+        )
       }
 
-      let left = rect.left
-      if (left + resolvedWidth > window.innerWidth - padding) {
-        left = window.innerWidth - resolvedWidth - padding
+      let leftViewport = rect.left
+      const maxRight = bounds.right - viewportPadding
+      const minLeft = bounds.left + padding
+
+      if (leftViewport + resolvedWidth > maxRight) {
+        leftViewport = maxRight - resolvedWidth
       }
+      leftViewport = Math.max(minLeft, leftViewport)
 
       setPosition({
-        top,
-        left: Math.max(padding, left),
+        top: contained ? topViewport - bounds.top : topViewport,
+        left: contained ? leftViewport - bounds.left : leftViewport,
         contentMaxHeight: Math.max(120, contentMaxHeight),
         width: resolvedWidth,
+        contained,
       })
     }
 

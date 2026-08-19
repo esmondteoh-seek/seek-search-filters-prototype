@@ -23,7 +23,8 @@ export const rootItems: LibraryItem[] = [
     type: "folder",
     id: "future-vision",
     label: "Future Vision",
-    description: "Multi-location search — Tab chips or Multi-pills",
+    description:
+      "Multi-location search — same role, several places, one search. Tab chips (Concept B) or Multi-pills (Concept A input)",
   },
 ]
 
@@ -49,6 +50,12 @@ export const folderItems: Record<LibraryFolderId, LibraryItem[]> = {
     },
   ],
   delivery: [
+    {
+      type: "prototype",
+      id: "vb-context",
+      label: "Context",
+      description: "Q1 FY27 — Search Result Filters hypothesis and platforms",
+    },
     {
       type: "prototype",
       id: "version-a",
@@ -80,6 +87,12 @@ export const folderItems: Record<LibraryFolderId, LibraryItem[]> = {
       id: "multi-pills",
       label: "Multi-pills",
       description: "Selected locations as removable pills in the Where field",
+    },
+    {
+      type: "prototype",
+      id: "mls-framing",
+      label: "Multi-location framing",
+      description: "Discovery board — Problem, Impact, Customers, and sourced evidence",
     },
   ],
 }

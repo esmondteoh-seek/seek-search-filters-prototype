@@ -93,7 +93,7 @@ function FutureVisionPreset({
   )
 }
 
-/** Future Vision — multi-location SERP with desktop / mobile web / app */
+/** Future Vision — multi-location SERP (same role, several places, one search) */
 export function FutureVisionPage({
   filterState,
   platform = "desktop",

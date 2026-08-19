@@ -126,7 +126,7 @@ export function PrototypeLibraryPage({
         item.id,
         search,
         item.id === "version-b"
-          ? { platform: "desktop", vbState: "default", view: "home" }
+          ? { platform: "desktop", vbState: "filters", view: "home" }
           : isFutureVisionConcept(item.id)
             ? { platform: "desktop" }
             : undefined,

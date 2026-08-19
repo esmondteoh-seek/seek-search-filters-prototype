@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { IconChevronDown } from "@/components/braid/icons"
 import { SortFilterPill } from "@/src/components/FilterBar/SortFilterPill"
 import { getDistanceDisplayLabel } from "@/src/components/FilterBar/filterControls"
@@ -6,11 +6,18 @@ import { JobDetailPanel } from "@/src/components/Results/JobDetailPanel"
 import { MobileJobDetailView } from "@/src/components/Results/MobileJobDetailView"
 import { ResultsHeader } from "@/src/components/Results/ResultsHeader"
 import { VersionBJobCard, VersionBJobCardSkeleton } from "@/src/components/versionB/VersionBJobCard"
+import { VersionBStrongApplicantBlankBanner } from "@/src/components/versionB/VersionBStrongApplicantBlankBanner"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
+import { getFilteredJobs } from "@/src/hooks/useJobFilters"
 import { Text } from "@/components/braid"
 import { cn } from "@/lib/utils"
 import type { VersionBPlatform, VersionBPreviewState } from "@/src/data/versionBPresets"
 import { getVersionBDisplayJobCount, versionBUsesPresetJobCount } from "@/src/data/versionBPresets"
+import {
+  filtersIgnoringBlankSaLatch,
+  showAllJobsTitle,
+  showStrongApplicantBlankNotice,
+} from "@/src/lib/isBlankSearch"
 
 interface VersionBResultsProps {
   filterState: UseJobFiltersReturn
@@ -76,8 +83,6 @@ export function VersionBResults({
   onJobSelect,
 }: VersionBResultsProps) {
   const {
-    filteredJobs,
-    selectedJob,
     selectedJobId,
     setSelectedJobId,
     isLoading,
@@ -92,12 +97,34 @@ export function VersionBResults({
     markNewToYouJobSeen,
   } = filterState
 
-  const usePresetCount = versionBUsesPresetJobCount(platform, previewState, search)
+  const displayJobs = useMemo(
+    () => getFilteredJobs(filtersIgnoringBlankSaLatch(search, filters), search),
+    [filters, search],
+  )
+
+  const displayFilters = useMemo(
+    () => filtersIgnoringBlankSaLatch(search, filters),
+    [filters, search],
+  )
+
+  const saBlankLatch = showStrongApplicantBlankNotice(search, filters)
+
+  const selectedJob = useMemo(
+    () => displayJobs.find((j) => j.id === selectedJobId) ?? null,
+    [displayJobs, selectedJobId],
+  )
+
+  const usePresetCount =
+    versionBUsesPresetJobCount(platform, previewState, search) &&
+    !saBlankLatch &&
+    !showAllJobsTitle(search, filters)
   const frameCount =
     usePresetCount
-      ? getVersionBDisplayJobCount(platform, previewState) ?? filteredJobs.length
-      : filteredJobs.length
+      ? getVersionBDisplayJobCount(platform, previewState) ?? displayJobs.length
+      : displayJobs.length
   const isApp = platform === "app"
+  const showSaNotice = !isApp && saBlankLatch
+  const resultsTitle = showAllJobsTitle(search, filters) ? "All jobs" : undefined
   const [isNarrow, setIsNarrow] = useState(singleColumn)
 
   useEffect(() => {
@@ -111,6 +138,13 @@ export function VersionBResults({
     mq.addEventListener("change", update)
     return () => mq.removeEventListener("change", update)
   }, [forceSplit, singleColumn])
+
+  useEffect(() => {
+    if (!saBlankLatch) return
+    if (selectedJobId && displayJobs.some((j) => j.id === selectedJobId)) return
+    const fallback = displayJobs[0]?.id ?? null
+    if (fallback !== selectedJobId) setSelectedJobId(fallback)
+  }, [saBlankLatch, selectedJobId, displayJobs, setSelectedJobId])
 
   const showMobileDetail = isNarrow && mobileDetailOpen && selectedJob && !isApp
 
@@ -137,45 +171,36 @@ export function VersionBResults({
         onBack={() => closeMobileDetail()}
         onBookmark={() => toggleBookmark(selectedJob.id)}
         contained={singleColumn}
+        chrome="delivery"
       />
     )
   }
 
   const smartFilters = {
-    newToYou: filters.newToYou,
-    strongApplicant: filters.strongApplicant,
+    newToYou: displayFilters.newToYou,
+    strongApplicant: displayFilters.strongApplicant,
   }
 
   return (
     <main
       id="results"
-      className={cn("pb-16", singleColumn ? (isApp ? "px-4 pt-3" : "px-4 pt-4") : "mx-auto max-w-[1280px] px-4 md:px-0")}
+      className={cn(
+        "pb-16",
+        singleColumn
+          ? isApp
+            ? "px-4 pt-3"
+            : platform === "mobile-web"
+              ? "px-4 pt-4"
+              : "px-4 pt-4"
+          : "mx-auto max-w-[1280px] px-4 md:px-0",
+      )}
     >
-      {filteredJobs.length === 0 && !isLoading ? (
-        <div className={cn("flex flex-col", isApp ? "gap-3" : "gap-4", !isNarrow && "lg:w-[484px]")}>
-          <div className="flex items-center justify-between gap-2">
-            <ResultsHeader count={frameCount} isLoading={isLoading} />
-            {!isApp ? (
-              <SortFilterPill
-                sort={filters.sort}
-                onSortChange={(sort) => updateFilters({ sort })}
-                variant="bar"
-                iconOnly
-                borderless
-                menuAlign="end"
-              />
-            ) : null}
-          </div>
-          <VersionBLocationLine filterState={filterState} platform={platform} />
-          <div className="rounded-2xl border-2 border-[#EAECF1] bg-white p-12 text-center">
-            <Text tone="secondary">No jobs match your search or filters.</Text>
-          </div>
-        </div>
-      ) : (
-        <div className={cn("flex flex-col gap-6", !isNarrow && "lg:flex-row lg:items-start lg:gap-[60px]")}>
-          <div className={cn("flex flex-col", isApp ? "gap-3" : "gap-4", !isNarrow && "lg:w-[484px] lg:shrink-0")}>
+      {displayJobs.length === 0 && !isLoading ? (
+        <div className={cn(!isNarrow && "lg:w-[484px]")}>
+          <VersionBStrongApplicantBlankBanner visible={showSaNotice} />
+          <div className={cn("flex flex-col", isApp ? "gap-3" : "gap-4")}>
             <div className="flex items-center justify-between gap-2">
-              <ResultsHeader count={frameCount} isLoading={isLoading} />
+              <ResultsHeader count={frameCount} isLoading={isLoading} title={resultsTitle} />
               {!isApp ? (
                 <SortFilterPill
                   sort={filters.sort}
@@ -188,13 +213,37 @@ export function VersionBResults({
               ) : null}
             </div>
             <VersionBLocationLine filterState={filterState} platform={platform} />
+            <div className="rounded-2xl border-2 border-[#EAECF1] bg-white p-12 text-center">
+              <Text tone="secondary">No jobs match your search or filters.</Text>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className={cn("flex flex-col gap-6", !isNarrow && "lg:flex-row lg:items-start lg:gap-[60px]")}>
+          <div className={cn(!isNarrow && "lg:w-[484px] lg:shrink-0")}>
+            <VersionBStrongApplicantBlankBanner visible={showSaNotice} />
+            <div className={cn("flex flex-col", isApp ? "gap-3" : "gap-4")}>
+              <div className="flex items-center justify-between gap-2">
+                <ResultsHeader count={frameCount} isLoading={isLoading} title={resultsTitle} />
+                {!isApp ? (
+                  <SortFilterPill
+                    sort={filters.sort}
+                    onSortChange={(sort) => updateFilters({ sort })}
+                    variant="bar"
+                    iconOnly
+                    borderless
+                    menuAlign="end"
+                  />
+                ) : null}
+              </div>
+              <VersionBLocationLine filterState={filterState} platform={platform} />
 
-            <div className={cn("flex flex-col gap-4", singleColumn && "gap-3")}>
+              <div className={cn("flex flex-col gap-4", singleColumn && "gap-3")}>
               {isLoading
                 ? Array.from({ length: 4 }).map((_, i) => (
                     <VersionBJobCardSkeleton key={i} appLayout={isApp} />
                   ))
-                : filteredJobs.map((job) => (
+                : displayJobs.map((job) => (
                     <VersionBJobCard
                       key={job.id}
                       job={job}
@@ -206,6 +255,7 @@ export function VersionBResults({
                       appLayout={isApp}
                     />
                   ))}
+              </div>
             </div>
           </div>
 

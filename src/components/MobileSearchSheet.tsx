@@ -7,8 +7,9 @@ import { LocationRadiusDropdown } from "@/src/components/FilterBar/LocationRadiu
 import { StandardFiltersRow } from "@/src/components/FilterBar/StandardFiltersRow"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
 import { getFilteredJobs } from "@/src/hooks/useJobFilters"
-import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
+import type { FilterState, UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { normalizeSearchQuery } from "@/src/hooks/searchQuery"
+import { useMountTransition } from "@/src/hooks/useMountTransition"
 
 interface MobileSearchSheetProps {
   open: boolean
@@ -18,8 +19,16 @@ interface MobileSearchSheetProps {
   showLocationRadius?: boolean
   /** Pink brand SEEK button — delivery prototypes */
   brandSeekButton?: boolean
+  /** Render inside PhoneFrame (no body portal or scroll lock) */
+  contained?: boolean
+  /** Slide in from the right (Version B mobile search) */
+  slideFromRight?: boolean
   /** Override default submit (e.g. Future Vision multi-location parsing) */
   onSubmit?: () => void
+  /** Apply filter option changes immediately (Version B) */
+  applyOnChange?: boolean
+  /** Override apply handler (e.g. Version B blank-SA clearing) */
+  onApplyFilters?: (patch: Partial<FilterState>) => void
 }
 
 function SearchListItem({
@@ -62,7 +71,11 @@ export function MobileSearchSheet({
   filterState,
   showLocationRadius = true,
   brandSeekButton = false,
+  contained = false,
+  slideFromRight = false,
   onSubmit,
+  applyOnChange = false,
+  onApplyFilters,
 }: MobileSearchSheetProps) {
   const {
     draftSearch,
@@ -74,6 +87,7 @@ export function MobileSearchSheet({
   } = filterState
 
   const keywordRef = useRef<HTMLInputElement>(null)
+  const { mounted, visible, durationMs } = useMountTransition(open, 280)
 
   const previewCount = useMemo(() => {
     const query = normalizeSearchQuery(draftSearch, search)
@@ -81,14 +95,14 @@ export function MobileSearchSheet({
   }, [draftSearch, search, filters])
 
   useEffect(() => {
-    if (!open) return
-    document.body.style.overflow = "hidden"
+    if (!open || !mounted) return
+    if (!contained) document.body.style.overflow = "hidden"
     const frame = requestAnimationFrame(() => keywordRef.current?.focus())
     return () => {
-      document.body.style.overflow = ""
+      if (!contained) document.body.style.overflow = ""
       cancelAnimationFrame(frame)
     }
-  }, [open])
+  }, [open, contained, mounted])
 
   useEffect(() => {
     if (!open) return
@@ -114,14 +128,23 @@ export function MobileSearchSheet({
     onClose()
   }
 
-  if (!open) return null
+  if (!mounted) return null
 
-  return createPortal(
+  const slideIn = contained || slideFromRight
+
+  const sheet = (
     <div
-      className="fixed inset-0 z-[100] flex flex-col bg-[#2E3849]"
+      className={cn(
+        contained ? "absolute inset-0 z-[100]" : "fixed inset-0 z-[100]",
+        "flex flex-col bg-[#2E3849]",
+        slideIn && "transition-transform",
+        slideIn && (visible ? "translate-x-0" : "translate-x-full"),
+      )}
+      style={slideIn ? { transitionDuration: `${durationMs}ms` } : undefined}
       role="dialog"
       aria-modal="true"
       aria-label="Search jobs"
+      aria-hidden={slideIn ? !visible : undefined}
     >
       <button
         type="button"
@@ -184,7 +207,10 @@ export function MobileSearchSheet({
             <StandardFiltersRow
               filterState={filterState}
               variant="compact"
+              wrap
               showFooter={false}
+              applyOnChange={applyOnChange}
+              onApplyFilters={onApplyFilters}
               className="-mx-4 px-4"
             />
           </div>
@@ -250,7 +276,9 @@ export function MobileSearchSheet({
           SEEK {previewCount.toLocaleString("en-AU")} {previewCount === 1 ? "job" : "jobs"}
         </button>
       </div>
-    </div>,
-    document.body,
+    </div>
   )
+
+  if (contained) return sheet
+  return createPortal(sheet, document.body)
 }

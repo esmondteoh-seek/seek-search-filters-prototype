@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { forwardRef, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react"
 import { IconChevronDown } from "@/components/braid/icons"
 import { cn } from "@/lib/utils"
 import type { SearchQuery } from "@/src/hooks/searchQuery"
@@ -12,6 +12,7 @@ import {
 import { FilterSurfaceLayers, filterPillThemes } from "@/src/components/motion/FilterSurfaceButton"
 import { FilterDraftProvider } from "./FilterDraftContext"
 import { FilterPopover } from "./FilterPopover"
+import { FilterPillSheet } from "./FilterPillSheet"
 import { FilterPopoverFooter } from "./FilterPopoverFooter"
 
 interface FilterPillProps {
@@ -43,6 +44,12 @@ interface FilterPillProps {
   applyOnChange?: boolean
   /** Popover width matches anchor element width */
   matchAnchorWidth?: boolean
+  /** popover = floating panel; sheet = app bottom sheet inside phone frame */
+  presentation?: "popover" | "sheet"
+  /** Classification sheet — Clear all + Done footer */
+  sheetShowClearAll?: boolean
+  /** Taller sheet body (classification list) */
+  sheetTall?: boolean
 }
 
 function mergeRefs<T>(...refs: Array<React.Ref<T> | undefined>) {
@@ -74,6 +81,9 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
     showFooter = true,
     applyOnChange = false,
     matchAnchorWidth = false,
+    presentation = "popover",
+    sheetShowClearAll = false,
+    sheetTall = false,
   },
   forwardedRef,
 ) {
@@ -81,6 +91,7 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
   void _alwaysShowChevron
   const internalRef = useRef<HTMLButtonElement>(null)
   const buttonRef = mergeRefs(forwardedRef, internalRef)
+  const titleId = useId()
   const [open, setOpen] = useState(false)
   const [draft, setDraft] = useState<FilterState>(filters)
   const [baselineDraft, setBaselineDraft] = useState<FilterState>(filters)
@@ -116,13 +127,37 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
   }
 
   // Closing without pressing Apply (switching pills, clicking outside, Esc)
-  // still commits the current selection so it is never silently discarded.
+  // Sheet mode commits only via Done; popover commits on close.
   const handleClose = () => {
-    commitDraft()
+    if (presentation === "sheet") {
+      setDraft(filters)
+      setBaselineDraft(filters)
+    } else if (!applyOnChange) {
+      commitDraft()
+    }
     setOpen(false)
   }
 
+  useEffect(() => {
+    if (!open || presentation !== "sheet") return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose()
+    }
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [open, presentation])
+
+  const filterContent = (
+    <FilterDraftProvider draft={draft} patchDraft={patchDraft}>
+      {children}
+    </FilterDraftProvider>
+  )
+
   const handleClearAll = () => {
+    if (sheetShowClearAll) {
+      setDraft((prev) => ({ ...prev, classifications: [] }))
+      return
+    }
     setDraft({ ...DEFAULT_FILTERS, sort: draft.sort })
   }
 
@@ -142,7 +177,7 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
   const variantClasses = {
     navy: "h-10 rounded-full px-4 text-base",
     bar: "h-[41px] rounded-lg px-3 text-base",
-    compact: "h-10 gap-1.5 rounded-full px-3 text-base",
+    compact: "h-9 gap-1.5 rounded-full pl-4 pr-3 text-sm",
     search: cn(
       "h-12 justify-between rounded-lg bg-white px-4 text-base text-[#2E3849]",
       "hover:bg-[#F7F8FB]",
@@ -155,6 +190,8 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
       ? filterPillThemes[variant]
       : null
 
+  const pillActive = applied || (presentation === "sheet" && open)
+
   return (
     <>
       <button
@@ -165,19 +202,32 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
         onClick={() => (open ? handleClose() : handleOpen())}
         className={cn(
           "relative inline-flex shrink-0 items-center gap-1.5 overflow-hidden font-normal",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#2E3849]",
+          "focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#051A49]",
           (variant === "bar" || variant === "search") && "focus-visible:ring-[#1E47A9] focus-visible:ring-offset-white",
           "active:scale-[0.98]",
           variantClasses[variant],
-          usesMotionSurface && applied && "text-white",
-          usesMotionSurface && !applied && variant === "bar" && "text-[#2E3849]",
-          usesMotionSurface && !applied && variant !== "bar" && "text-white",
+          usesMotionSurface && pillActive && "text-white",
+          usesMotionSurface && !pillActive && variant === "bar" && "text-[#2E3849]",
+          usesMotionSurface && !pillActive && variant !== "bar" && "text-white",
+          presentation === "sheet" && variant === "compact" && !pillActive && "border-2 border-white/25",
           measureOnly && "pointer-events-none",
           className,
         )}
       >
         {usesMotionSurface && surfaceTheme ? (
-          <FilterSurfaceLayers active={applied} theme={surfaceTheme} />
+          <FilterSurfaceLayers
+            active={pillActive}
+            theme={
+              presentation === "sheet" && open && !applied
+                ? {
+                    ...surfaceTheme,
+                    activeBg: "bg-[#2A60CD]",
+                    inactiveBg: surfaceTheme.inactiveBg,
+                    inactiveBorder: "border-transparent",
+                  }
+                : surfaceTheme
+            }
+          />
         ) : null}
         {variant === "search" ? (
           <>
@@ -202,27 +252,40 @@ export const FilterPill = forwardRef<HTMLButtonElement, FilterPillProps>(functio
         )}
       </button>
 
-      <FilterPopover
-        open={open && !measureOnly}
-        onClose={handleClose}
-        anchorRef={internalRef}
-        title={popoverTitle}
-        width={popoverWidth}
-        matchAnchorWidth={matchAnchorWidth}
-        footer={
-          showFooter && hasDraftChanges ? (
-            <FilterPopoverFooter
-              jobCount={previewCount}
-              onClearAll={handleClearAll}
-              onApply={handleApply}
-            />
-          ) : undefined
-        }
-      >
-        <FilterDraftProvider draft={draft} patchDraft={patchDraft}>
-          {children}
-        </FilterDraftProvider>
-      </FilterPopover>
+      {presentation === "sheet" ? (
+        <FilterPillSheet
+          open={open && !measureOnly}
+          onClose={handleClose}
+          title={popoverTitle}
+          titleId={titleId}
+          onDone={handleApply}
+          showClearAll={sheetShowClearAll}
+          onClearAll={sheetShowClearAll ? handleClearAll : undefined}
+          tall={sheetTall}
+        >
+          {filterContent}
+        </FilterPillSheet>
+      ) : (
+        <FilterPopover
+          open={open && !measureOnly}
+          onClose={handleClose}
+          anchorRef={internalRef}
+          title={popoverTitle}
+          width={popoverWidth}
+          matchAnchorWidth={matchAnchorWidth}
+          footer={
+            showFooter && hasDraftChanges ? (
+              <FilterPopoverFooter
+                jobCount={previewCount}
+                onClearAll={handleClearAll}
+                onApply={handleApply}
+              />
+            ) : undefined
+          }
+        >
+          {filterContent}
+        </FilterPopover>
+      )}
     </>
   )
 })

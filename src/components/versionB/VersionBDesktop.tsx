@@ -12,6 +12,7 @@ import { useCompactSearchChrome } from "@/src/hooks/useCompactSearchChrome"
 import { useMobileSearchSheet } from "@/src/hooks/useMobileSearchSheet"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
+import { patchClearingBlankSa } from "@/src/lib/isBlankSearch"
 import { cn } from "@/lib/utils"
 
 interface VersionBDesktopProps {
@@ -107,18 +108,16 @@ export function VersionBDesktop({ filterState, previewState }: VersionBDesktopPr
                   <VersionBSearchForm
                     filterState={filterState}
                     onSubmit={submitSearch}
-                    locationPlaceholder="All Australia"
-                    platform="desktop"
-                    previewState={previewState}
                   />
                   <VersionBFilterChips
                     filterState={filterState}
                     platform="desktop"
+                    previewState={previewState}
                     layout="expanded"
                   />
                 </>
               ) : (
-                <div className="flex min-w-0 flex-wrap items-center gap-2 md:flex-nowrap md:gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-2 md:gap-3">
                   <VersionBSearchForm
                     filterState={filterState}
                     compact
@@ -127,6 +126,7 @@ export function VersionBDesktop({ filterState, previewState }: VersionBDesktopPr
                   <VersionBFilterChips
                     filterState={filterState}
                     platform="desktop"
+                    previewState={previewState}
                     layout="inline"
                     onMoreClick={openSearch}
                   />
@@ -153,6 +153,13 @@ export function VersionBDesktop({ filterState, previewState }: VersionBDesktopPr
         filterState={filterState}
         showLocationRadius={false}
         brandSeekButton
+        slideFromRight
+        applyOnChange
+        onApplyFilters={(patch) =>
+          filterState.applyFilters(
+            patchClearingBlankSa(filterState.search, filterState.filters, patch),
+          )
+        }
       />
     </>
   )

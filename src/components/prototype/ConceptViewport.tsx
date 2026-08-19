@@ -5,13 +5,15 @@ import type { VersionBPlatform } from "@/src/data/versionBPresets"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 import { VersionBPage } from "@/src/concepts/VersionBPage"
 import { FutureVisionPage } from "@/src/concepts/FutureVisionPage"
+import { MultiLocationFramingPage } from "@/src/pages/MultiLocationFramingPage"
+import { VersionBContextPage } from "@/src/pages/VersionBContextPage"
 
-/** Crossfade wrapper — ~200ms opacity transition between concepts */
+/** Crossfade wrapper — fades on concept/platform change; previewState updates in place */
 export function ConceptViewport({
   conceptId,
   filterState,
   platform = "desktop",
-  previewState = "default",
+  previewState = "filters",
 }: {
   conceptId: string
   filterState: UseJobFiltersReturn
@@ -21,32 +23,26 @@ export function ConceptViewport({
   const [visible, setVisible] = useState(true)
   const [renderedId, setRenderedId] = useState(conceptId)
   const [renderedPlatform, setRenderedPlatform] = useState(platform)
-  const [renderedPreview, setRenderedPreview] = useState(previewState)
 
   useEffect(() => {
-    if (
-      conceptId === renderedId &&
-      platform === renderedPlatform &&
-      previewState === renderedPreview
-    ) {
+    if (conceptId === renderedId && platform === renderedPlatform) {
       return
     }
     setVisible(false)
     const timer = window.setTimeout(() => {
       setRenderedId(conceptId)
       setRenderedPlatform(platform)
-      setRenderedPreview(previewState)
       requestAnimationFrame(() => setVisible(true))
-    }, 200)
+    }, 350)
     return () => window.clearTimeout(timer)
-  }, [conceptId, renderedId, platform, renderedPlatform, previewState, renderedPreview])
+  }, [conceptId, renderedId, platform, renderedPlatform])
 
   const concept = getConceptById(renderedId) ?? concepts[0]
   const Page = concept.component
 
   return (
     <div
-      className="concept-viewport transition-opacity duration-200 ease-out motion-reduce:transition-none"
+      className="concept-viewport transition-opacity duration-[350ms] ease-out motion-reduce:transition-none"
       style={{ opacity: visible ? 1 : 0 }}
       aria-busy={!visible}
     >
@@ -54,7 +50,7 @@ export function ConceptViewport({
         <VersionBPage
           filterState={filterState}
           platform={renderedPlatform}
-          previewState={renderedPreview}
+          previewState={previewState}
         />
       ) : isFutureVisionConcept(renderedId) ? (
         <FutureVisionPage
@@ -62,6 +58,10 @@ export function ConceptViewport({
           platform={renderedPlatform}
           locationChrome={getFutureVisionLocationChrome(renderedId)}
         />
+      ) : renderedId === "mls-framing" ? (
+        <MultiLocationFramingPage filterState={filterState} />
+      ) : renderedId === "vb-context" ? (
+        <VersionBContextPage filterState={filterState} />
       ) : (
         <Page filterState={filterState} />
       )}

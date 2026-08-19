@@ -307,7 +307,7 @@ export function WorkTypeFilterContent({ filters, onChange, variant = "popover" }
     Casual: "Casual/Vacation",
   }
 
-  if (variant === "drawer") {
+  if (variant === "drawer" || variant === "sheet") {
     return (
       <div className="flex flex-wrap gap-[11px]">
         {WORK_TYPES.map((workType) => {
@@ -318,18 +318,13 @@ export function WorkTypeFilterContent({ filters, onChange, variant = "popover" }
               type="button"
               onClick={() => toggle(workType)}
               className={cn(
-                "inline-flex h-10 items-center gap-1.5 rounded-full px-3 text-base transition-colors",
+                "inline-flex h-10 items-center rounded-full px-4 text-base transition-colors",
                 selected
                   ? "bg-[#242C39] text-white hover:bg-[#1C2330]"
-                  : "border-2 border-[#EAECF1] text-[#2E3849] hover:border-[#D2D7DF]",
+                  : "border-2 border-[#EAECF1] bg-white text-[#2E3849] hover:border-[#D2D7DF]",
               )}
             >
               <span>{drawerLabels[workType]}</span>
-              {selected ? (
-                <IconClear className="h-[18px] w-[18px] shrink-0" aria-hidden />
-              ) : (
-                <IconAdd className="h-3.5 w-3.5 shrink-0" aria-hidden />
-              )}
             </button>
           )
         })}
@@ -391,6 +386,36 @@ export function RemoteFilterContent({ filters, onChange, variant = "popover" }: 
     )
   }
 
+  if (variant === "sheet") {
+    const sheetLabels: Record<(typeof REMOTE_OPTIONS)[number], string> = {
+      "On-site": "On-site",
+      Hybrid: "Hybrid",
+      "Fully remote": "Remote",
+    }
+    return (
+      <div className="flex flex-wrap gap-[11px]">
+        {REMOTE_OPTIONS.map((option) => {
+          const selected = draft.remoteOptions.includes(option)
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => toggle(option)}
+              className={cn(
+                "inline-flex h-10 items-center rounded-full px-4 text-base transition-colors",
+                selected
+                  ? "bg-[#242C39] text-white hover:bg-[#1C2330]"
+                  : "border-2 border-[#EAECF1] bg-white text-[#2E3849] hover:border-[#D2D7DF]",
+              )}
+            >
+              {sheetLabels[option]}
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <Stack space="xsmall">
       {REMOTE_OPTIONS.map((option) => (
@@ -409,7 +434,7 @@ export function RemoteFilterContent({ filters, onChange, variant = "popover" }: 
 export function ListingTimeFilterContent({ filters, onChange, variant = "popover" }: FilterControlsProps) {
   const { draft, patchDraft } = useFilterControlState(filters, onChange)
 
-  if (variant === "drawer") {
+  if (variant === "drawer" || variant === "sheet") {
     return (
       <div className="flex flex-col gap-4">
         {LISTING_TIME_OPTIONS.map((option) => (
