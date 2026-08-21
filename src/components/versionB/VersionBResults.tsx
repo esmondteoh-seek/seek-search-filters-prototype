@@ -188,7 +188,7 @@ export function VersionBResults({
           ? isApp
             ? "px-4 pt-3"
             : platform === "mobile-web"
-              ? "px-4 pt-4"
+              ? "px-5 pt-4"
               : "px-4 pt-4"
           : "mx-auto max-w-[1280px] px-4 md:px-0",
       )}

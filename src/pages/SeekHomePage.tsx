@@ -61,7 +61,7 @@ export function SeekHomePage({
   }, [forceMobile])
 
   const isMobileLayout = forceMobile || viewportMobile
-  const pagePaddingX = isMobileLayout ? "px-4" : "px-4 md:px-0"
+  const pagePaddingX = isMobileLayout ? "px-5" : "px-4 md:px-0"
   const { hidden: headerHidden, instant: headerInstant } = useScrollAwayHeader(
     !hideSiteHeader && !isMobileLayout,
   )

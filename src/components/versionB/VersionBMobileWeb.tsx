@@ -29,7 +29,7 @@ export function VersionBMobileWeb({ filterState, previewState }: VersionBMobileW
 
   return (
     <PhoneFrame className="bg-white">
-      <header className="flex shrink-0 items-center justify-between border-b border-[#EAECF1] bg-white px-4 py-3">
+      <header className="flex shrink-0 items-center justify-between border-b border-[#EAECF1] bg-white px-5 py-3">
         <button
           type="button"
           onClick={() => navigateToHome()}
@@ -50,7 +50,7 @@ export function VersionBMobileWeb({ filterState, previewState }: VersionBMobileW
 
       {!hideSearchChrome ? (
         <div className="shrink-0">
-          <VersionBNavyBand className="p-4" contentClassName="gap-3">
+          <VersionBNavyBand className="px-5 py-4 md:px-5" contentClassName="gap-3">
             <VersionBMobileSearchPill label={pillLabel} onOpen={openSheet} />
             <VersionBFilterChips
               filterState={filterState}
