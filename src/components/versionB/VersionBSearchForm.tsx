@@ -1,5 +1,6 @@
-import { IconLocation, IconSearch } from "@/components/braid/icons"
+import { IconSearch } from "@/components/braid/icons"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
+import { VersionBLocationField } from "@/src/components/versionB/VersionBLocationField"
 import { formatVersionBCompactSearchLabel } from "@/src/data/versionBPresets"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
@@ -70,26 +71,14 @@ export function VersionBSearchForm({
         />
       </label>
 
-      <label className="flex h-12 w-[min(353px,32vw)] shrink-0 items-center gap-3 rounded-xl bg-white px-4">
-        <IconLocation className="h-5 w-5 shrink-0 text-[#5A6881]" aria-hidden />
-        <input
-          type="text"
-          value={draftSearch.location}
-          onChange={(e) => updateDraftSearch({ location: e.target.value })}
-          onKeyDown={handleKeyDown}
-          placeholder={locationPlaceholder}
-          className={cn(
-            "search-input-no-clear min-w-0 flex-1 bg-transparent text-base text-[#2E3849] outline-none",
-            locationPlaceholder && "placeholder:text-[#5A6881]",
-          )}
-          aria-label="Location"
-        />
-        <SearchFieldClearButton
-          visible={draftSearch.location.length > 0}
-          onClear={() => updateDraftSearch({ location: "" })}
-          label="Clear location"
-        />
-      </label>
+      <VersionBLocationField
+        value={draftSearch.location}
+        onChange={(location) => updateDraftSearch({ location })}
+        onSubmit={onSubmit}
+        placeholder={locationPlaceholder}
+        focusRingOffset="navy"
+        className="h-12 w-[min(353px,32vw)] shrink-0"
+      />
 
       <button
         type="button"

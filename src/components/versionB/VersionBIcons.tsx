@@ -5,12 +5,12 @@ interface NtyDotProps {
   className?: string
 }
 
-/** NTY indicator — 12px mint outer + dark green inner dot */
+/** NTY indicator — 12px mint outer + dark green inner dot with lively pulse */
 export function NtyDot({ className }: NtyDotProps) {
   return (
     <span
       className={cn(
-        "inline-flex size-3 shrink-0 items-center justify-center rounded-full",
+        "nty-dot-pulse inline-flex size-3 shrink-0 items-center justify-center rounded-full",
         className,
       )}
       style={{ backgroundColor: VERSION_B_TOKENS.ntyDotOuter }}

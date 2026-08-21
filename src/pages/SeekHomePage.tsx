@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { IconLocation, IconSearch } from "@/components/braid/icons"
+import { IconSearch } from "@/components/braid/icons"
 import { cn } from "@/lib/utils"
 import {
   HomeClassificationSelect,
@@ -12,6 +12,7 @@ import {
 } from "@/src/components/home/HomeFeedSections"
 import { HomeMoreOptionsRow } from "@/src/components/home/HomeMoreOptionsRow"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
+import { VersionBLocationField } from "@/src/components/versionB/VersionBLocationField"
 import { SiteHeader } from "@/src/components/SiteHeader"
 import { useScrollAwayHeader } from "@/src/hooks/useScrollAwayHeader"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
@@ -21,8 +22,9 @@ import {
   HOME_SAVED_JOB,
   HOME_SIDEBAR_SAVED_SEARCHES,
 } from "@/src/data/homeFeed"
+import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 import type { SearchQuery } from "@/src/hooks/searchQuery"
-import { markVersionBFromHome } from "@/src/lib/versionBHomeSession"
+import { markVersionBFromHome, markVersionBHomeMoreOptions } from "@/src/lib/versionBHomeSession"
 
 interface SeekHomePageProps {
   onSearch: (query: SearchQuery) => void
@@ -34,6 +36,12 @@ interface SeekHomePageProps {
   hideSiteHeader?: boolean
   /** Scroll feed inside parent flex column instead of page */
   contained?: boolean
+  /** Filter transition — More options already expanded */
+  forceMoreOptionsExpanded?: boolean
+  /** Prefill hero search fields (Filter transition demo) */
+  initialSearch?: SearchQuery
+  /** Scenario spotlight target on expanded More options pills */
+  moreOptionsSpotlight?: VersionBPreviewState
 }
 
 /** SEEK Career Feed home — Figma Home-Career-Feed FY26 (desktop 12667:105561, mobile 12667:104931) */
@@ -44,12 +52,27 @@ export function SeekHomePage({
   forceMobile = false,
   hideSiteHeader = false,
   contained = false,
+  forceMoreOptionsExpanded = false,
+  initialSearch,
+  moreOptionsSpotlight,
 }: SeekHomePageProps) {
-  const [keywords, setKeywords] = useState("")
+  const [keywords, setKeywords] = useState(initialSearch?.keywords ?? "")
   const [classification, setClassification] = useState("")
-  const [location, setLocation] = useState("")
-  const [moreOptionsExpanded, setMoreOptionsExpanded] = useState(false)
+  const [location, setLocation] = useState(initialSearch?.location ?? "")
+  const [moreOptionsExpanded, setMoreOptionsExpanded] = useState(forceMoreOptionsExpanded)
   const [viewportMobile, setViewportMobile] = useState(forceMobile)
+
+  useEffect(() => {
+    if (!initialSearch) return
+    setKeywords(initialSearch.keywords)
+    setLocation(initialSearch.location)
+  }, [initialSearch?.keywords, initialSearch?.location])
+
+  useEffect(() => {
+    if (!forceMoreOptionsExpanded) return
+    setMoreOptionsExpanded(true)
+    markVersionBHomeMoreOptions()
+  }, [forceMoreOptionsExpanded])
 
   useEffect(() => {
     if (forceMobile) return
@@ -152,24 +175,14 @@ export function SeekHomePage({
                       label="Clear keywords"
                     />
                   </label>
-                  <label className="flex h-full min-w-0 flex-1 items-center gap-3 px-4">
-                    <IconLocation className="h-5 w-5 shrink-0 text-[#5A6881]" aria-hidden />
-                    <span className="sr-only">Where</span>
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      placeholder="Enter suburb, city, or region"
-                      className="search-input-no-clear min-w-0 flex-1 bg-transparent text-base text-[#2E3849] outline-none placeholder:text-[#5A6881]"
-                      aria-label="Where"
-                    />
-                    <SearchFieldClearButton
-                      visible={location.length > 0}
-                      onClear={() => setLocation("")}
-                      label="Clear location"
-                    />
-                  </label>
+                  <VersionBLocationField
+                    value={location}
+                    onChange={setLocation}
+                    onSubmit={() => submit()}
+                    placeholder="Enter suburb, city, or region"
+                    chrome="embedded"
+                    className="h-full min-w-0 flex-1 px-4"
+                  />
                 </div>
 
                 <button
@@ -210,23 +223,14 @@ export function SeekHomePage({
 
               <div className="flex flex-col gap-4">
                 <p className="text-base font-medium text-white">Where</p>
-                <label className="flex h-12 items-center gap-3 rounded-lg bg-white px-4">
-                  <IconLocation className="h-5 w-5 shrink-0 text-[#5A6881]" aria-hidden />
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Enter suburb, city or region"
-                    className="search-input-no-clear min-w-0 flex-1 bg-transparent text-base text-[#2E3849] outline-none placeholder:text-[#5A6881]"
-                    aria-label="Location"
-                  />
-                  <SearchFieldClearButton
-                    visible={location.length > 0}
-                    onClear={() => setLocation("")}
-                    label="Clear location"
-                  />
-                </label>
+                <VersionBLocationField
+                  value={location}
+                  onChange={setLocation}
+                  onSubmit={() => submit()}
+                  placeholder="Enter suburb, city or region"
+                  focusRingOffset="navy"
+                  rounded="lg"
+                />
               </div>
 
               <button
@@ -243,6 +247,7 @@ export function SeekHomePage({
                 filterState={filterState}
                 expanded={moreOptionsExpanded}
                 onExpandedChange={setMoreOptionsExpanded}
+                spotlight={moreOptionsExpanded ? moreOptionsSpotlight : undefined}
                 className={cn(isMobileLayout ? "mt-6" : "mt-4")}
               />
             ) : null}

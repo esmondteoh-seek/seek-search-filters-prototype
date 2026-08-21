@@ -1,6 +1,6 @@
 import { IconFilter } from "@/components/braid/icons"
 import { motion, useReducedMotion } from "motion/react"
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { NtyDot, StrongApplicantIcon } from "@/src/components/versionB/VersionBIcons"
 import { VersionBFixedFilterPills } from "@/src/components/versionB/VersionBFixedFilterPills"
 import { VersionBFilterOnboardingTooltip } from "@/src/components/versionB/VersionBFilterOnboardingTooltip"
@@ -8,7 +8,6 @@ import { VERSION_B_TOKENS } from "@/src/components/versionB/versionBTokens"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { countModalFilters } from "@/src/hooks/useJobFilters"
 import { FilterSurfaceButton, filterPillThemes } from "@/src/components/motion/FilterSurfaceButton"
-import { motionTokens } from "@/src/lib/motionTokens"
 import { consumeVersionBHomeMoreOptions } from "@/src/lib/versionBHomeSession"
 import {
   isBlankSearchWithoutOtherFilters,
@@ -35,7 +34,15 @@ function skipChipEntranceForPreview(
 ): boolean {
   if (platform === "app") return true
   if (preview === "scrolled") return true
+  if (preview === "filter-transition") return false
   return !consumeVersionBHomeMoreOptions()
+}
+
+function vbSpotlightAttr(
+  previewState: VersionBPreviewState,
+  target: VersionBPreviewState,
+): VersionBPreviewState | undefined {
+  return previewState === target ? target : undefined
 }
 
 interface VersionBFilterChipsProps {
@@ -140,7 +147,8 @@ function MoreChip({
   )
 }
 
-const chipEntranceSpring = { type: "spring" as const, stiffness: 200, damping: 38 }
+const chipEntranceEase = [0.25, 0.1, 0.25, 1] as const
+const chipEntranceTween = { duration: 0.6, ease: chipEntranceEase }
 
 /** Personalised chips slide in from the left and push fixed filters right on mount */
 function AnimatedPersonalisedFilters({
@@ -148,62 +156,104 @@ function AnimatedPersonalisedFilters({
   onEntranceComplete,
   skipEntrance = false,
   compactNavy = false,
+  spotlight,
 }: {
   children: ReactNode
   onEntranceComplete?: () => void
   skipEntrance?: boolean
   compactNavy?: boolean
+  spotlight?: VersionBPreviewState
 }) {
   const gapClass = compactNavy ? "gap-2" : "gap-3"
   const reduceMotion = useReducedMotion()
+  const measureRef = useRef<HTMLDivElement>(null)
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(
+    reduceMotion || skipEntrance ? 0 : null,
+  )
   const [revealed, setRevealed] = useState(Boolean(reduceMotion || skipEntrance))
+  const [entranceDone, setEntranceDone] = useState(Boolean(reduceMotion || skipEntrance))
   const completeRef = useRef(onEntranceComplete)
   completeRef.current = onEntranceComplete
+
+  useLayoutEffect(() => {
+    if (skipEntrance || reduceMotion) return
+    const node = measureRef.current
+    if (!node) return
+
+    const measure = () => setMeasuredWidth(node.scrollWidth)
+    measure()
+
+    const observer = new ResizeObserver(measure)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [skipEntrance, reduceMotion, children])
 
   useEffect(() => {
     if (skipEntrance || reduceMotion) {
       completeRef.current?.()
       return
     }
+    if (measuredWidth === null) return
     setRevealed(false)
+    setEntranceDone(false)
     const id = requestAnimationFrame(() => setRevealed(true))
     return () => cancelAnimationFrame(id)
-  }, [skipEntrance, reduceMotion])
+  }, [skipEntrance, reduceMotion, measuredWidth])
 
   if (skipEntrance || reduceMotion) {
-    return <div className={cn("flex w-max shrink-0 items-center", gapClass)}>{children}</div>
+    return (
+      <div
+        className={cn("flex w-max shrink-0 items-center", gapClass)}
+        data-vb-spotlight={spotlight}
+      >
+        {children}
+      </div>
+    )
+  }
+
+  if (measuredWidth === null) {
+    return (
+      <div
+        ref={measureRef}
+        className={cn(
+          "pointer-events-none invisible absolute flex w-max shrink-0 items-center",
+          gapClass,
+        )}
+        aria-hidden
+      >
+        {children}
+      </div>
+    )
   }
 
   return (
     <motion.div
-      layout
-      className={cn(
-        "grid w-max shrink-0",
-        revealed ? "overflow-visible" : "overflow-hidden",
-      )}
+      data-vb-spotlight={spotlight}
+      className={cn("shrink-0", entranceDone ? "overflow-visible" : "overflow-hidden")}
       initial={false}
-      animate={{ gridTemplateColumns: revealed ? "1fr" : "0fr" }}
-      transition={{ gridTemplateColumns: chipEntranceSpring }}
+      animate={{ width: revealed ? measuredWidth : 0 }}
+      transition={{ width: chipEntranceTween }}
+      onAnimationComplete={() => {
+        if (revealed) {
+          setEntranceDone(true)
+          completeRef.current?.()
+        }
+      }}
     >
-      <div className={cn("min-w-0", revealed ? "overflow-visible" : "overflow-hidden")}>
-        <motion.div
-          className={cn("flex items-center", gapClass)}
-          initial={false}
-          animate={{
-            opacity: revealed ? 1 : 0,
-            x: revealed ? 0 : -16,
-          }}
-          transition={{
-            opacity: { duration: 0.45, ease: motionTokens.ease.out },
-            x: chipEntranceSpring,
-          }}
-          onAnimationComplete={() => {
-            if (revealed) completeRef.current?.()
-          }}
-        >
-          {children}
-        </motion.div>
-      </div>
+      <motion.div
+        className={cn("flex w-max items-center", gapClass)}
+        initial={false}
+        animate={{
+          opacity: revealed ? 1 : 0,
+          x: revealed ? 0 : -28,
+        }}
+        transition={{
+          opacity: chipEntranceTween,
+          x: chipEntranceTween,
+        }}
+      >
+        {children}
+      </motion.div>
     </motion.div>
   )
 }
@@ -215,6 +265,9 @@ function FilterChipRow({
   onChipEntranceComplete,
   skipMotion = false,
   compactNavy = false,
+  rowKey,
+  rowSpotlight,
+  personalisedSpotlight,
 }: {
   personalised: ReactNode
   trailing: ReactNode
@@ -222,6 +275,9 @@ function FilterChipRow({
   onChipEntranceComplete?: () => void
   skipMotion?: boolean
   compactNavy?: boolean
+  rowKey?: string
+  rowSpotlight?: VersionBPreviewState
+  personalisedSpotlight?: VersionBPreviewState
 }) {
   const rowClass = cn(
     "flex min-w-0 items-center gap-3",
@@ -232,41 +288,38 @@ function FilterChipRow({
     className,
   )
 
+  const trailingContent = skipMotion ? (
+    trailing
+  ) : (
+    <motion.div layout="position" className="min-w-0 shrink-0">
+      {trailing}
+    </motion.div>
+  )
+
   const rowContent = (
     <>
       <AnimatedPersonalisedFilters
         skipEntrance={skipMotion}
         compactNavy={compactNavy}
         onEntranceComplete={onChipEntranceComplete}
+        spotlight={personalisedSpotlight}
       >
         {personalised}
       </AnimatedPersonalisedFilters>
-      {trailing}
+      {trailingContent}
       {compactNavy ? <span className="w-5 shrink-0" aria-hidden /> : null}
     </>
   )
 
-  if (compactNavy || skipMotion) {
-    return (
-      <div
-        className={rowClass}
-        style={compactNavy ? { WebkitOverflowScrolling: "touch" } : undefined}
-      >
-        {rowContent}
-      </div>
-    )
-  }
-
   return (
-    <motion.div layout className={rowClass}>
-      <AnimatedPersonalisedFilters
-        compactNavy={compactNavy}
-        onEntranceComplete={onChipEntranceComplete}
-      >
-        {personalised}
-      </AnimatedPersonalisedFilters>
-      {trailing}
-    </motion.div>
+    <div
+      key={rowKey}
+      data-vb-spotlight={rowSpotlight}
+      className={rowClass}
+      style={compactNavy ? { WebkitOverflowScrolling: "touch" } : undefined}
+    >
+      {rowContent}
+    </div>
   )
 }
 
@@ -295,15 +348,48 @@ export function VersionBFilterChips({
   const [skipHomeEntrance, setSkipHomeEntrance] = useState(() =>
     skipChipEntranceForPreview(previewState, platform),
   )
+  const [entranceKey, setEntranceKey] = useState(0)
+  const [hasPlayedEntrance, setHasPlayedEntrance] = useState(() =>
+    skipChipEntranceForPreview(previewState, platform),
+  )
 
   useEffect(() => {
-    setSkipHomeEntrance(skipChipEntranceForPreview(previewState, platform))
+    const skip = skipChipEntranceForPreview(previewState, platform)
+    setSkipHomeEntrance(skip)
+    if (skip) setHasPlayedEntrance(true)
   }, [previewState, platform])
+
+  useEffect(() => {
+    const onReplay = (event: Event) => {
+      const detail = (event as CustomEvent<VersionBPreviewState>).detail
+      if (detail === "filter-transition") {
+        setHasPlayedEntrance(false)
+        setEntranceKey((key) => key + 1)
+      }
+    }
+    window.addEventListener("vb-scenario-replay", onReplay)
+    return () => window.removeEventListener("vb-scenario-replay", onReplay)
+  }, [])
+
+  const chipRowKey =
+    previewState === "filter-transition" ? `filter-transition-${entranceKey}` : undefined
+
+  const rowSpotlight =
+    previewState === "selected" || previewState === "scrolled" ? previewState : undefined
+  const fixedFiltersSpotlight = vbSpotlightAttr(previewState, "filters")
+  const personalisedSpotlight = vbSpotlightAttr(previewState, "filter-transition")
+  const blankSaSpotlight = vbSpotlightAttr(previewState, "blank")
 
   const skipMotion =
     skipHomeEntrance ||
+    hasPlayedEntrance ||
     previewState === "scrolled" ||
     (platform === "desktop" && layout === "inline")
+
+  const handleChipEntranceComplete = () => {
+    setHasPlayedEntrance(true)
+    setChipsReady(true)
+  }
 
   const showOnboarding = !appMode
   const [chipsReady, setChipsReady] = useState(skipMotion)
@@ -343,40 +429,55 @@ export function VersionBFilterChips({
           compactNavy={compactNavy}
         />
       </VersionBFilterOnboardingTooltip>
-      <PersonalisedChip
-        label="Strong applicant"
-        active={
-          filters.strongApplicant &&
-          !isBlankSearchWithoutOtherFilters(search, filters)
-        }
-        ariaChecked={filters.strongApplicant}
-        onToggle={() => {
-          if (isBlankSearchWithoutOtherFilters(search, filters)) {
-            if (filters.strongApplicant) {
-              scrollSearchResultsToTop()
+      <div data-vb-spotlight={blankSaSpotlight} className="shrink-0">
+        <PersonalisedChip
+          label="Strong applicant"
+          active={
+            filters.strongApplicant &&
+            !isBlankSearchWithoutOtherFilters(search, filters)
+          }
+          ariaChecked={filters.strongApplicant}
+          onToggle={() => {
+            if (isBlankSearchWithoutOtherFilters(search, filters)) {
+              if (filters.strongApplicant) {
+                scrollSearchResultsToTop()
+                return
+              }
+              applyFilters({ strongApplicant: true })
               return
             }
-            applyFilters({ strongApplicant: true })
-            return
-          }
-          toggleSmartFilter("strongApplicant")
-        }}
-        showDiamond
-        appMode={appMode}
-        compactNavy={compactNavy}
-      />
+            toggleSmartFilter("strongApplicant")
+          }}
+          showDiamond
+          appMode={appMode}
+          compactNavy={compactNavy}
+        />
+      </div>
     </>
   )
 
-  const fixedPills = <VersionBFixedFilterPills filterState={filterState} />
+  const fixedPills = (
+    <div
+      data-vb-spotlight={layout === "expanded" && !appMode ? fixedFiltersSpotlight : undefined}
+      className={cn(
+        "flex min-w-0 flex-wrap items-center gap-3",
+        layout === "expanded" && !appMode && compactNavy && "gap-2",
+      )}
+    >
+      <VersionBFixedFilterPills filterState={filterState} />
+    </div>
+  )
 
   if (layout === "expanded" && !appMode) {
     return (
       <FilterChipRow
+        rowKey={chipRowKey}
+        rowSpotlight={rowSpotlight}
+        personalisedSpotlight={personalisedSpotlight}
         personalised={personalised}
         trailing={fixedPills}
         skipMotion={skipMotion}
-        onChipEntranceComplete={() => setChipsReady(true)}
+        onChipEntranceComplete={handleChipEntranceComplete}
       />
     )
   }
@@ -389,19 +490,26 @@ export function VersionBFilterChips({
     )
   }
 
+  const moreChip = (
+    <div data-vb-spotlight={fixedFiltersSpotlight} className="shrink-0">
+      <MoreChip
+        appliedCount={appliedCount}
+        onClick={onMoreClick}
+        compactNavy={compactNavy}
+      />
+    </div>
+  )
+
   return (
     <FilterChipRow
+      rowKey={chipRowKey}
+      rowSpotlight={rowSpotlight}
+      personalisedSpotlight={personalisedSpotlight}
       personalised={personalised}
       skipMotion={skipMotion}
       compactNavy={compactNavy}
-      onChipEntranceComplete={() => setChipsReady(true)}
-      trailing={
-        <MoreChip
-          appliedCount={appliedCount}
-          onClick={onMoreClick}
-          compactNavy={compactNavy}
-        />
-      }
+      onChipEntranceComplete={handleChipEntranceComplete}
+      trailing={moreChip}
     />
   )
 }

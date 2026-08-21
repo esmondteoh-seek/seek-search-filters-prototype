@@ -29,6 +29,7 @@ export type VersionBPlatform = "desktop" | "mobile-web" | "app"
 export type VersionBPreviewState =
   | "onboarding"
   | "blank"
+  | "filter-transition"
   | "filters"
   | "selected"
   | "scrolled"
@@ -43,6 +44,20 @@ export const VERSION_B_SCENARIO_OPTIONS: {
   label: string
   notes: VersionBScenarioNote[]
 }[] = [
+  {
+    value: "filter-transition",
+    label: "Filter transition",
+    notes: [
+      {
+        title: "Filter transition (desktop + mobile web)",
+        items: [
+          "User expands More options on Home, then runs SEEK.",
+          "Personalised chips (New / New to you + Strong applicant) slide in from the left.",
+          "Fixed filters shift right as personalised chips enter the row.",
+        ],
+      },
+    ],
+  },
   {
     value: "onboarding",
     label: "Onboarding tooltip",
@@ -197,24 +212,14 @@ const MOBILE_WEB_SELECTED_SEARCH: SearchQuery = {
   location: "Sydney NSW 3000",
 }
 
-const APP_SEARCH: SearchQuery = {
-  keywords: "First Nation Project Manager",
-  location: "All Melbourne VIC",
-}
-
 export function isVersionBScrolledPreview(preview: VersionBPreviewState): boolean {
   return preview === "scrolled"
 }
 
 export function getVersionBSearch(platform: VersionBPlatform, preview: VersionBPreviewState): SearchQuery {
-  if (preview === "blank") {
+  if (preview === "blank" || preview === "onboarding") {
     return BLANK_SEARCH
   }
-  if (preview === "onboarding") {
-    if (platform === "app") return APP_SEARCH
-    return BLANK_SEARCH
-  }
-  if (platform === "app") return APP_SEARCH
   if (platform === "mobile-web") {
     return preview === "selected" ? MOBILE_WEB_SELECTED_SEARCH : MOBILE_WEB_DEFAULT_SEARCH
   }
@@ -251,6 +256,7 @@ export function versionBAppliesScenarioPreset(preview: VersionBPreviewState): bo
   return (
     preview === "onboarding" ||
     preview === "blank" ||
+    preview === "filter-transition" ||
     preview === "filters" ||
     preview === "selected" ||
     preview === "scrolled"

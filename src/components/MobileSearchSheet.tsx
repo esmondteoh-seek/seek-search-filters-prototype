@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef } from "react"
 import { createPortal } from "react-dom"
-import { IconChevronRight, IconClose, IconHeart, IconLocation, IconSearch } from "@/components/braid/icons"
+import { IconChevronRight, IconClose, IconHeart, IconSearch } from "@/components/braid/icons"
 import { cn } from "@/lib/utils"
 import { LAST_SEARCH, SAVED_SEARCHES, type SavedSearchItem } from "@/src/data/savedSearches"
 import { LocationRadiusDropdown } from "@/src/components/FilterBar/LocationRadiusDropdown"
 import { StandardFiltersRow } from "@/src/components/FilterBar/StandardFiltersRow"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
+import { VersionBLocationField } from "@/src/components/versionB/VersionBLocationField"
 import { getFilteredJobs } from "@/src/hooks/useJobFilters"
 import type { FilterState, UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { normalizeSearchQuery, type SearchQuery } from "@/src/hooks/searchQuery"
@@ -184,25 +185,15 @@ export function MobileSearchSheet({
             </label>
 
             <div className="flex gap-2">
-              <label className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-lg bg-white px-4">
-                <IconLocation className="h-6 w-6 shrink-0 text-[#5A6881]" aria-hidden />
-                <input
-                  type="text"
-                  value={draftSearch.location}
-                  onChange={(e) => updateDraftSearch({ location: e.target.value })}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSeek()
-                  }}
-                  placeholder="Location"
-                  className="search-input-no-clear min-w-0 flex-1 bg-transparent text-base text-[#2E3849] outline-none placeholder:text-[#5A6881]"
-                  aria-label="Location"
-                />
-                <SearchFieldClearButton
-                  visible={draftSearch.location.length > 0}
-                  onClear={() => updateDraftSearch({ location: "" })}
-                  label="Clear location"
-                />
-              </label>
+              <VersionBLocationField
+                value={draftSearch.location}
+                onChange={(location) => updateDraftSearch({ location })}
+                onSubmit={handleSeek}
+                placeholder="Location"
+                focusRingOffset="overlay"
+                rounded="lg"
+                className="min-w-0 flex-1"
+              />
               {showLocationRadius ? (
                 <LocationRadiusDropdown filterState={filterState} className="w-[104px]" />
               ) : null}

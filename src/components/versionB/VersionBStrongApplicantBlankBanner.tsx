@@ -1,10 +1,12 @@
 import { IconInfo } from "@/components/braid/icons"
+import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 import { motionTokens } from "@/src/lib/motionTokens"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 
 interface VersionBStrongApplicantBlankBannerProps {
   visible: boolean
   className?: string
+  spotlight?: VersionBPreviewState
 }
 
 const expandSpring = { type: "spring" as const, stiffness: 200, damping: 38 }
@@ -13,6 +15,7 @@ const expandSpring = { type: "spring" as const, stiffness: 200, damping: 38 }
 export function VersionBStrongApplicantBlankBanner({
   visible,
   className,
+  spotlight,
 }: VersionBStrongApplicantBlankBannerProps) {
   const reduceMotion = useReducedMotion()
 
@@ -22,6 +25,7 @@ export function VersionBStrongApplicantBlankBanner({
         <motion.div
           key="sa-blank-notice"
           role="status"
+          data-vb-spotlight={spotlight}
           className={className}
           initial={
             reduceMotion

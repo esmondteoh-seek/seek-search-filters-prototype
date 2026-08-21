@@ -2,16 +2,34 @@ import { IconClose, IconFilter } from "@/components/braid/icons"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 import { useVersionBSerpOnboarding } from "@/src/hooks/useVersionBSerpOnboarding"
 import { useMountTransition } from "@/src/hooks/useMountTransition"
+import { VERSION_B_SERP_SEARCH_EVENT } from "@/src/lib/versionBSerpEvents"
 import { motionTokens } from "@/src/lib/motionTokens"
 import { cn } from "@/lib/utils"
 import { motion, useReducedMotion } from "motion/react"
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 
 /** Figma color/background/info — distinct from navy band */
 const TOOLTIP_BG = "#1D559D"
 const TOOLTIP_MAX_WIDTH = 330
 const FRAME_PADDING = 16
+const ONBOARDING_DELAY_MS = 3000
+
+const BLOCKED_ONBOARDING_SCENARIOS = new Set<VersionBPreviewState>([
+  "filter-transition",
+  "blank",
+  "selected",
+  "scrolled",
+])
+
+function canShowProductOnboarding(
+  previewState: VersionBPreviewState,
+  shouldShow: boolean,
+): boolean {
+  if (previewState === "onboarding") return true
+  if (BLOCKED_ONBOARDING_SCENARIOS.has(previewState)) return false
+  return shouldShow
+}
 
 interface VersionBFilterOnboardingTooltipProps {
   children: ReactNode
@@ -103,6 +121,7 @@ function FilterTooltipBubble({
   portalTarget,
   onDismiss,
   showDismiss,
+  spotlight,
 }: {
   open: boolean
   position: {
@@ -115,9 +134,19 @@ function FilterTooltipBubble({
   portalTarget: HTMLElement | null
   onDismiss?: () => void
   showDismiss?: boolean
+  spotlight?: VersionBPreviewState
 }) {
   const reduceMotion = useReducedMotion()
   const { mounted, visible, durationMs } = useMountTransition(open, 350)
+
+  useEffect(() => {
+    if (!open || !onDismiss) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onDismiss()
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [open, onDismiss])
 
   if (!mounted || !portalTarget) return null
 
@@ -125,6 +154,7 @@ function FilterTooltipBubble({
     <motion.div
       role="status"
       aria-live="polite"
+      data-vb-spotlight={spotlight}
       className={cn(
         position.contained ? "absolute" : "fixed",
         "z-[120] w-max drop-shadow-[0_4px_4px_rgba(46,56,73,0.25)]",
@@ -197,26 +227,49 @@ export function VersionBFilterOnboardingTooltip({
   previewState = "filters",
 }: VersionBFilterOnboardingTooltipProps) {
   const anchorRef = useRef<HTMLDivElement>(null)
-  const { dismiss } = useVersionBSerpOnboarding()
+  const reduceMotion = useReducedMotion()
+  const { dismiss, shouldShow } = useVersionBSerpOnboarding()
   const [onboardingVisible, setOnboardingVisible] = useState(false)
+  const [onboardingEpoch, setOnboardingEpoch] = useState(0)
 
-  const forceOnboarding = previewState === "onboarding"
-  const ready = chipsReady
+  const eligible = enabled && chipsReady && canShowProductOnboarding(previewState, shouldShow)
 
   useEffect(() => {
-    if (!enabled || !ready) {
+    if (!eligible) {
       setOnboardingVisible(false)
       return
     }
-    setOnboardingVisible(forceOnboarding)
-  }, [enabled, ready, forceOnboarding])
 
-  const handleDismiss = () => {
+    setOnboardingVisible(false)
+    const delay = reduceMotion ? 0 : ONBOARDING_DELAY_MS
+    const timer = window.setTimeout(() => setOnboardingVisible(true), delay)
+    return () => window.clearTimeout(timer)
+  }, [eligible, onboardingEpoch, reduceMotion, previewState])
+
+  useEffect(() => {
+    const onReplay = (event: Event) => {
+      const detail = (event as CustomEvent<VersionBPreviewState>).detail
+      if (detail === "onboarding") {
+        setOnboardingEpoch((epoch) => epoch + 1)
+      }
+    }
+    window.addEventListener("vb-scenario-replay", onReplay)
+    return () => window.removeEventListener("vb-scenario-replay", onReplay)
+  }, [])
+
+  const handleDismiss = useCallback(() => {
     dismiss()
     setOnboardingVisible(false)
-  }
+  }, [dismiss])
 
-  const showOnboardingBubble = enabled && onboardingVisible
+  useEffect(() => {
+    if (!onboardingVisible) return
+    const onSearch = () => handleDismiss()
+    window.addEventListener(VERSION_B_SERP_SEARCH_EVENT, onSearch)
+    return () => window.removeEventListener(VERSION_B_SERP_SEARCH_EVENT, onSearch)
+  }, [onboardingVisible, handleDismiss])
+
+  const showOnboardingBubble = eligible && onboardingVisible
   const { portalTarget, ...position } = useTooltipPosition(showOnboardingBubble, anchorRef)
 
   return (
@@ -228,6 +281,7 @@ export function VersionBFilterOnboardingTooltip({
         portalTarget={portalTarget}
         onDismiss={handleDismiss}
         showDismiss
+        spotlight={previewState === "onboarding" ? "onboarding" : undefined}
       />
     </div>
   )

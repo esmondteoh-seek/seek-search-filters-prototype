@@ -29,8 +29,16 @@ interface VersionBAppProps {
 
 /** Version B native app — back + sliders, white pill row, tab bar */
 export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
-  const { search, filters, mobileDetailOpen, closeMobileDetail, bookmarkedIds, toggleBookmark } =
-    filterState
+  const {
+    search,
+    filters,
+    mobileDetailOpen,
+    closeMobileDetail,
+    bookmarkedIds,
+    toggleBookmark,
+    selectedJobId,
+    setSelectedJobId,
+  } = filterState
   const { title, subtitle } = formatVersionBAppTitle(search)
   const hasFixedFilters = countModalFilters(filters) > 0
 
@@ -70,10 +78,14 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
       setSelectedId(null)
       return
     }
+    const fallback = displayJobs[0].id
     setSelectedId((prev) =>
-      prev && displayJobs.some((j) => j.id === prev) ? prev : displayJobs[0].id,
+      prev && displayJobs.some((j) => j.id === prev) ? prev : fallback,
     )
-  }, [displayJobs])
+    if (!selectedJobId || !displayJobs.some((j) => j.id === selectedJobId)) {
+      setSelectedJobId(fallback)
+    }
+  }, [displayJobs, selectedJobId, setSelectedJobId])
 
   const selectedJob = useMemo(
     () => displayJobs.find((j) => j.id === selectedId) ?? null,
@@ -132,6 +144,7 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
             <button
               type="button"
               onClick={() => setSheetOpen(true)}
+              data-vb-spotlight={previewState === "filters" ? "filters" : undefined}
               className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#2E3849] hover:bg-[#F5F7FA]"
               aria-label={hasFixedFilters ? "Filters applied" : "Filters"}
             >
@@ -215,11 +228,13 @@ export function VersionBApp({ filterState, previewState }: VersionBAppProps) {
         open={refineSheetOpen}
         onClose={() => setRefineSheetOpen(false)}
         onEditSearch={() => setSheetOpen(true)}
+        previewState={previewState}
       />
 
       <VersionBAppOnboardingSheet
         open={onboardingSheetOpen && !refineSheetOpen}
         onClose={() => setOnboardingSheetOpen(false)}
+        previewState={previewState}
       />
     </PhoneFrame>
   )

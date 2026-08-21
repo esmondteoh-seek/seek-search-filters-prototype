@@ -14,6 +14,7 @@ import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 import { getVersionBScaledJobCount } from "@/src/data/versionBPresets"
 import { patchClearingBlankSa } from "@/src/lib/isBlankSearch"
+import { dispatchVersionBSerpSearch } from "@/src/lib/versionBSerpEvents"
 import { cn } from "@/lib/utils"
 
 interface VersionBDesktopProps {
@@ -78,6 +79,7 @@ export function VersionBDesktop({ filterState, previewState }: VersionBDesktopPr
 
   const submitSearch = () => {
     filterState.submitSearch()
+    dispatchVersionBSerpSearch()
     setBandForceExpanded(false)
   }
 
@@ -156,6 +158,10 @@ export function VersionBDesktop({ filterState, previewState }: VersionBDesktopPr
         brandSeekButton
         slideFromRight
         applyOnChange
+        onSubmit={() => {
+          filterState.submitSearch()
+          dispatchVersionBSerpSearch()
+        }}
         mapPreviewCount={(filters, query) =>
           getVersionBScaledJobCount("desktop", previewState, filters, query)
         }

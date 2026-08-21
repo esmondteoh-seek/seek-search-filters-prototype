@@ -6,6 +6,7 @@ const PARAM = "vbState"
 const VALID_STATES = new Set<VersionBPreviewState>([
   "onboarding",
   "blank",
+  "filter-transition",
   "filters",
   "selected",
   "scrolled",

@@ -14,6 +14,7 @@ interface VersionBAppBottomSheetProps {
     label: string
     onClick: () => void
   }
+  spotlight?: string
 }
 
 /** Shared app bottom sheet chrome (onboarding + SA refine) */
@@ -25,6 +26,7 @@ export function VersionBAppBottomSheet({
   title,
   description,
   primaryAction,
+  spotlight,
 }: VersionBAppBottomSheetProps) {
   const { mounted, visible, durationMs } = useMountTransition(open, 320)
 
@@ -48,6 +50,7 @@ export function VersionBAppBottomSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        data-vb-spotlight={spotlight}
         className={cn(
           "relative mx-auto w-full max-w-[430px] rounded-t-[40px] bg-white px-6 pb-8 pt-6 shadow-[0_-8px_32px_rgba(28,35,48,0.12)] transition-transform",
           visible ? "translate-y-0" : "translate-y-full",

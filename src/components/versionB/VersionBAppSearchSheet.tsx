@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from "react"
-import { IconChevronRight, IconClose, IconHeart, IconLocation, IconSearch } from "@/components/braid/icons"
+import { IconChevronRight, IconClose, IconHeart, IconSearch } from "@/components/braid/icons"
 import { SearchFieldClearButton } from "@/src/components/shared/SearchFieldClearButton"
 import { VersionBFixedFilterPills } from "@/src/components/versionB/VersionBFixedFilterPills"
+import { VersionBLocationField } from "@/src/components/versionB/VersionBLocationField"
 import { LAST_SEARCH, SAVED_SEARCHES, type SavedSearchItem } from "@/src/data/savedSearches"
 import { getVersionBScaledJobCount } from "@/src/data/versionBPresets"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
@@ -188,25 +189,16 @@ export function VersionBAppSearchSheet({
               />
             </label>
 
-            <label className="flex h-12 items-center gap-4 rounded-lg bg-white px-4">
-              <IconLocation className="h-6 w-6 shrink-0 text-[#5A6881]" aria-hidden />
-              <input
-                type="text"
-                value={draftSearch.location}
-                onChange={(e) => updateDraftSearch({ location: e.target.value })}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSeek()
-                }}
-                placeholder="Enter suburb, city, or region"
-                className="search-input-no-clear min-w-0 flex-1 bg-transparent text-sm text-[#2E3849] outline-none placeholder:text-[#5A6881]"
-                aria-label="Location"
-              />
-              <SearchFieldClearButton
-                visible={draftSearch.location.length > 0}
-                onClear={() => updateDraftSearch({ location: "" })}
-                label="Clear location"
-              />
-            </label>
+            <VersionBLocationField
+              value={draftSearch.location}
+              onChange={(location) => updateDraftSearch({ location })}
+              onSubmit={handleSeek}
+              placeholder="Enter suburb, city, or region"
+              focusRingOffset="overlay"
+              rounded="lg"
+              size="compact"
+              iconClassName="h-6 w-6"
+            />
 
             <VersionBFixedFilterPills
               filterState={filterState}

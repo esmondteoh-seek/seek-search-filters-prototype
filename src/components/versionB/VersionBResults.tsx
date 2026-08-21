@@ -138,11 +138,11 @@ export function VersionBResults({
   }, [forceSplit, singleColumn])
 
   useEffect(() => {
-    if (!saBlankLatch) return
+    if (displayJobs.length === 0) return
     if (selectedJobId && displayJobs.some((j) => j.id === selectedJobId)) return
     const fallback = displayJobs[0]?.id ?? null
     if (fallback !== selectedJobId) setSelectedJobId(fallback)
-  }, [saBlankLatch, selectedJobId, displayJobs, setSelectedJobId])
+  }, [selectedJobId, displayJobs, setSelectedJobId])
 
   const showMobileDetail = isNarrow && mobileDetailOpen && selectedJob && !isApp
 
@@ -195,7 +195,10 @@ export function VersionBResults({
     >
       <div className={cn("flex flex-col gap-6", !isNarrow && "lg:flex-row lg:items-start lg:gap-[60px]")}>
         <div className={cn(!isNarrow && "lg:w-[484px] lg:shrink-0")}>
-          <VersionBStrongApplicantBlankBanner visible={showSaNotice} />
+          <VersionBStrongApplicantBlankBanner
+            visible={showSaNotice}
+            spotlight={previewState === "blank" ? "blank" : undefined}
+          />
           <div className={cn("flex flex-col", isApp ? "gap-3" : "gap-4")}>
             <div className="flex items-center justify-between gap-2">
               <ResultsHeader count={displayCount} isLoading={isLoading} title={resultsTitle} />

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useJobFilters } from "@/src/hooks/useJobFilters"
 import { useConceptParam } from "@/src/hooks/useConceptParam"
 import { isFutureVisionConcept } from "@/src/concepts/index"
@@ -24,6 +24,13 @@ import {
   FutureVisionWhatsNewPanel,
 } from "@/src/components/futureVision/FutureVisionExplainability"
 import { VersionBScenarioPanel } from "@/src/components/versionB/VersionBScenarioPanel"
+import { VersionBScenarioSpotlight } from "@/src/components/versionB/VersionBScenarioSpotlight"
+import {
+  markVersionBFromHome,
+  markVersionBHomeMoreOptions,
+} from "@/src/lib/versionBHomeSession"
+
+const FILTER_TRANSITION_HOLD_MS = 1200
 
 function resolveInitialSearch() {
   if (readAppView() !== "jobs") return DEFAULT_SEARCH
@@ -37,13 +44,15 @@ export default function App() {
   const filterState = useJobFilters({ initialSearch })
   const { applySearchQuery, search, replaceFilters } = filterState
   const { conceptId, inPrototypeMode } = useConceptParam()
-  const { view, navigateToJobs, replaceJobsSearchInUrl } = useAppNavigation()
+  const { view, navigateToJobs, navigateToHome, replaceJobsSearchInUrl } = useAppNavigation()
   const { folderId, openFolder, goToRoot } = useLibraryNavigation()
   const isVersionB = conceptId === "version-b"
   const isFutureVision = isFutureVisionConcept(conceptId)
   const usesPlatformParam = isVersionB || isFutureVision
   const { platform, setPlatform } = useVersionBPlatformParam(usesPlatformParam)
   const { previewState, setPreviewState } = useVersionBPreviewState(isVersionB)
+  const [filterTransitionEpoch, setFilterTransitionEpoch] = useState(0)
+  const filterTransitionBooted = useRef(false)
 
   useSeekDocumentTitle(view, search)
 
@@ -82,24 +91,76 @@ export default function App() {
     [applySearchQuery, replaceFilters, navigateToJobs],
   )
 
+  const startFilterTransitionFlow = useCallback(() => {
+    if (platform === "app") return
+    markVersionBFromHome()
+    markVersionBHomeMoreOptions()
+    navigateToHome()
+    setFilterTransitionEpoch((epoch) => epoch + 1)
+  }, [platform, navigateToHome])
+
+  useEffect(() => {
+    if (!isVersionB || previewState !== "filter-transition" || platform === "app") return
+    if (view !== "home") return
+
+    const timer = window.setTimeout(() => {
+      openVersionBSerp(platform, "filter-transition")
+    }, FILTER_TRANSITION_HOLD_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [
+    isVersionB,
+    previewState,
+    platform,
+    view,
+    openVersionBSerp,
+    filterTransitionEpoch,
+  ])
+
+  useEffect(() => {
+    const onReplay = (event: Event) => {
+      const detail = (event as CustomEvent<VersionBPreviewState>).detail
+      if (detail === "filter-transition") {
+        startFilterTransitionFlow()
+      }
+    }
+    window.addEventListener("vb-scenario-replay", onReplay)
+    return () => window.removeEventListener("vb-scenario-replay", onReplay)
+  }, [startFilterTransitionFlow])
+
+  useEffect(() => {
+    if (!isVersionB || previewState !== "filter-transition" || platform === "app") return
+    if (filterTransitionBooted.current || view !== "jobs") return
+    filterTransitionBooted.current = true
+    startFilterTransitionFlow()
+  }, [isVersionB, previewState, platform, view, startFilterTransitionFlow])
+
   const handleVersionBPlatformChange = useCallback(
     (next: VersionBPlatform) => {
       setPlatform(next)
       if (view === "home") {
-        openVersionBSerp(next, previewState)
+        if (previewState === "filter-transition" && next !== "app") {
+          startFilterTransitionFlow()
+        } else {
+          openVersionBSerp(next, previewState)
+        }
       }
     },
-    [setPlatform, view, previewState, openVersionBSerp],
+    [setPlatform, view, previewState, openVersionBSerp, startFilterTransitionFlow],
   )
 
   const handleVersionBScenarioChange = useCallback(
     (next: VersionBPreviewState) => {
       setPreviewState(next)
+      if (next === "filter-transition" && platform !== "app") {
+        startFilterTransitionFlow()
+        return
+      }
       if (view === "home") {
         openVersionBSerp(platform, next)
       }
     },
-    [setPreviewState, view, platform, openVersionBSerp],
+    [setPreviewState, view, platform, openVersionBSerp, startFilterTransitionFlow],
   )
 
   useEffect(() => {
@@ -131,7 +192,12 @@ export default function App() {
     return (
       <>
         {isVersionB ? (
-          <VersionBHomePage onSearch={handleHomeSearch} filterState={filterState} platform={platform} />
+          <VersionBHomePage
+            onSearch={handleHomeSearch}
+            filterState={filterState}
+            platform={platform}
+            previewState={previewState}
+          />
         ) : (
           <SeekHomePage onSearch={handleHomeSearch} filterState={filterState} />
         )}

@@ -12,6 +12,7 @@ import { useMobileSearchSheet } from "@/src/hooks/useMobileSearchSheet"
 import { navigateToHome } from "@/src/hooks/useAppNavigation"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { patchClearingBlankSa } from "@/src/lib/isBlankSearch"
+import { dispatchVersionBSerpSearch } from "@/src/lib/versionBSerpEvents"
 import { formatVersionBCompactSearchLabel, getVersionBScaledJobCount } from "@/src/data/versionBPresets"
 import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 
@@ -85,6 +86,10 @@ export function VersionBMobileWeb({ filterState, previewState }: VersionBMobileW
         contained
         slideFromRight
         applyOnChange
+        onSubmit={() => {
+          filterState.submitSearch()
+          dispatchVersionBSerpSearch()
+        }}
         mapPreviewCount={(filters, query) =>
           getVersionBScaledJobCount("mobile-web", previewState, filters, query)
         }

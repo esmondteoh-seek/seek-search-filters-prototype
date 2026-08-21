@@ -3,7 +3,7 @@ import { IconChevronDown } from "@/components/braid/icons"
 import { SeekHomePage } from "@/src/pages/SeekHomePage"
 import { PhoneFrame } from "@/src/components/shared/PhoneFrame"
 import { VersionBRoot } from "@/src/components/versionB/VersionBRoot"
-import type { VersionBPlatform } from "@/src/data/versionBPresets"
+import { getVersionBSearch, type VersionBPlatform, type VersionBPreviewState } from "@/src/data/versionBPresets"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import type { SearchQuery } from "@/src/hooks/searchQuery"
 import { navigateToHome } from "@/src/hooks/useAppNavigation"
@@ -12,15 +12,21 @@ interface VersionBHomePageProps {
   onSearch: (query: SearchQuery) => void
   filterState: UseJobFiltersReturn
   platform?: VersionBPlatform
+  previewState?: VersionBPreviewState
 }
 
 function VersionBMobileWebHomeFrame({
   onSearch,
   filterState,
+  previewState,
 }: {
   onSearch: (query: SearchQuery) => void
   filterState: UseJobFiltersReturn
+  previewState?: VersionBPreviewState
 }) {
+  const filterTransition = previewState === "filter-transition"
+  const preset = filterTransition ? getVersionBSearch("mobile-web", "filter-transition") : undefined
+
   return (
     <PhoneFrame className="bg-white">
       <header className="flex shrink-0 items-center justify-between border-b border-[#EAECF1] bg-white px-4 py-3">
@@ -49,6 +55,8 @@ function VersionBMobileWebHomeFrame({
         forceMobile
         hideSiteHeader
         contained
+        forceMoreOptionsExpanded={filterTransition}
+        initialSearch={preset}
       />
 
       <div className="flex shrink-0 justify-center pb-2 pt-1">
@@ -59,20 +67,38 @@ function VersionBMobileWebHomeFrame({
 }
 
 /** Version B Career Feed home — desktop full page; mobile web in phone frame */
-export function VersionBHomePage({ onSearch, filterState, platform = "desktop" }: VersionBHomePageProps) {
+export function VersionBHomePage({
+  onSearch,
+  filterState,
+  platform = "desktop",
+  previewState,
+}: VersionBHomePageProps) {
   if (platform === "app") return null
+
+  const filterTransition = previewState === "filter-transition"
+  const preset = filterTransition ? getVersionBSearch(platform, "filter-transition") : undefined
 
   if (platform === "mobile-web") {
     return (
       <VersionBRoot className="bg-[#E8ECF2]">
-        <VersionBMobileWebHomeFrame onSearch={onSearch} filterState={filterState} />
+        <VersionBMobileWebHomeFrame
+          onSearch={onSearch}
+          filterState={filterState}
+          previewState={previewState}
+        />
       </VersionBRoot>
     )
   }
 
   return (
     <VersionBRoot className="min-h-screen bg-white">
-      <SeekHomePage onSearch={onSearch} filterState={filterState} userName="Riccardo" />
+      <SeekHomePage
+        onSearch={onSearch}
+        filterState={filterState}
+        userName="Riccardo"
+        forceMoreOptionsExpanded={filterTransition}
+        initialSearch={preset}
+      />
     </VersionBRoot>
   )
 }

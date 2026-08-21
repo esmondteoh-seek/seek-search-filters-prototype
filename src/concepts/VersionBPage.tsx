@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 import { VersionBApp } from "@/src/components/versionB/VersionBApp"
 import { VersionBDesktop } from "@/src/components/versionB/VersionBDesktop"
 import { VersionBMobileWeb } from "@/src/components/versionB/VersionBMobileWeb"
@@ -14,6 +14,8 @@ import {
 import { DEFAULT_FILTERS } from "@/src/hooks/useJobFilters"
 import { consumeVersionBFromHome } from "@/src/lib/versionBHomeSession"
 import { useVersionBScenarioEffects } from "@/src/hooks/useVersionBScenarioEffects"
+import { VersionBScenarioSpotlight } from "@/src/components/versionB/VersionBScenarioSpotlight"
+import { cn } from "@/lib/utils"
 
 interface VersionBPageProps {
   filterState: UseJobFiltersReturn
@@ -61,23 +63,33 @@ export function VersionBPage({
   useVersionBPreset(filterState.applySearchQuery, filterState.replaceFilters, platform, previewState)
   useVersionBScenarioEffects(previewState)
 
+  const scenarioShell = (children: ReactNode, rootClassName?: string) => (
+    <div
+      className={cn("vb-scenario-root min-h-0", rootClassName)}
+      data-vb-spotlight-active={previewState}
+    >
+      {children}
+      <VersionBScenarioSpotlight previewState={previewState} />
+    </div>
+  )
+
   if (platform === "app") {
-    return (
+    return scenarioShell(
       <VersionBRoot>
         <VersionBApp filterState={filterState} previewState={previewState} />
-      </VersionBRoot>
+      </VersionBRoot>,
     )
   }
 
   if (platform === "mobile-web") {
-    return (
+    return scenarioShell(
       <VersionBRoot className="bg-[#E8ECF2]">
         <VersionBMobileWeb filterState={filterState} previewState={previewState} />
-      </VersionBRoot>
+      </VersionBRoot>,
     )
   }
 
-  return (
+  return scenarioShell(
     <VersionBRoot>
       <a
         href="#results"
@@ -86,6 +98,6 @@ export function VersionBPage({
         Skip to results
       </a>
       <VersionBDesktop filterState={filterState} previewState={previewState} />
-    </VersionBRoot>
+    </VersionBRoot>,
   )
 }

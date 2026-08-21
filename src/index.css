@@ -55,6 +55,28 @@
     }
   }
 
+  @keyframes nty-dot-pulse {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.72;
+      transform: scale(1.18);
+    }
+  }
+
+  .nty-dot-pulse {
+    animation: nty-dot-pulse 1.6s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nty-dot-pulse {
+      animation: none;
+    }
+  }
+
   @keyframes filter-popover-in {
     from {
       opacity: 0;
@@ -222,5 +244,43 @@
 
   .fv-explain-on [data-fv-explain] {
     transition: none;
+  }
+}
+
+/* Version B — scenario spotlight */
+.vb-scenario-spotlight-backdrop {
+  background: rgb(5 26 73 / 0.45);
+  backdrop-filter: blur(8px);
+  transition:
+    opacity 300ms ease,
+    backdrop-filter 300ms ease,
+    background 300ms ease;
+}
+
+.vb-scenario-spotlight-backdrop--faded {
+  opacity: 0;
+  backdrop-filter: blur(0);
+  background: rgb(5 26 73 / 0);
+}
+
+.vb-scenario-root[data-vb-spotlight-chrome="on"] [data-vb-spotlight] {
+  position: relative;
+  z-index: 190;
+  outline: 2px solid #e60278;
+  outline-offset: 3px;
+  border-radius: 12px;
+  transition: outline-color 300ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vb-scenario-spotlight-backdrop {
+    backdrop-filter: none;
+    background: rgb(5 26 73 / 0.55);
+    transition: opacity 300ms ease, background 300ms ease;
+  }
+
+  .vb-scenario-spotlight-backdrop--faded {
+    opacity: 0;
+    background: rgb(5 26 73 / 0);
   }
 }

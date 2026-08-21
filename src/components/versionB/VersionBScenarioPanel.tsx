@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils"
 import {
   VERSION_B_SCENARIO_OPTIONS,
   type VersionBPreviewState,
-  type VersionBScenarioNote,
 } from "@/src/data/versionBPresets"
 
 const COLLAPSED_KEY = "vb-scenario-panel-collapsed"
@@ -17,27 +16,6 @@ const panelCardClass = cn(
   "rounded-2xl px-3 py-2.5 shadow-lg ring-1 ring-white/10",
   "bg-[#1a1a2e]/95 text-white backdrop-blur-sm",
 )
-
-function ScenarioNotes({ notes }: { notes: VersionBScenarioNote[] }) {
-  return (
-    <div className="mt-2 space-y-2 border-t border-[#1a1a2e]/10 pt-2">
-      {notes.map((block) => (
-        <div key={block.title ?? block.items[0]}>
-          {block.title ? (
-            <p className="mb-1 text-[10px] font-semibold leading-snug text-[#1a1a2e]/90">
-              {block.title}
-            </p>
-          ) : null}
-          <ul className="list-disc space-y-0.5 pl-3.5 text-[10px] font-normal leading-snug text-[#1a1a2e]/75">
-            {block.items.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      ))}
-    </div>
-  )
-}
 
 /** Left-side Version B scenario toggles — Figma Q1 FY27 share-out states */
 export function VersionBScenarioPanel({
@@ -124,7 +102,7 @@ export function VersionBScenarioPanel({
           aria-label="Version B scenario"
         >
           <div className="flex flex-col gap-1">
-            {VERSION_B_SCENARIO_OPTIONS.map(({ value, label, notes }) => {
+            {VERSION_B_SCENARIO_OPTIONS.map(({ value, label }) => {
               const active = previewState === value
               return (
                 <button
@@ -132,8 +110,14 @@ export function VersionBScenarioPanel({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-expanded={active}
-                  onClick={() => handleSelect(value)}
+                  onClick={() => {
+                    if (active) {
+                      window.dispatchEvent(
+                        new CustomEvent("vb-scenario-replay", { detail: value }),
+                      )
+                    }
+                    handleSelect(value)
+                  }}
                   className={cn(
                     "rounded-lg px-2.5 py-2 text-left transition-colors",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a2e]",
@@ -143,7 +127,6 @@ export function VersionBScenarioPanel({
                   )}
                 >
                   <span className="block text-[11px] font-medium leading-snug">{label}</span>
-                  {active ? <ScenarioNotes notes={notes} /> : null}
                 </button>
               )
             })}

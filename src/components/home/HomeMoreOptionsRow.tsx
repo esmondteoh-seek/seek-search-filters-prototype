@@ -2,6 +2,7 @@ import { useId, useState } from "react"
 import { IconFilter } from "@/components/braid/icons"
 import { VersionBFixedFilterPills } from "@/src/components/versionB/VersionBFixedFilterPills"
 import { markVersionBHomeMoreOptions } from "@/src/lib/versionBHomeSession"
+import type { VersionBPreviewState } from "@/src/data/versionBPresets"
 import type { UseJobFiltersReturn } from "@/src/hooks/useJobFilters"
 import { cn } from "@/lib/utils"
 
@@ -10,6 +11,7 @@ interface HomeMoreOptionsRowProps {
   className?: string
   expanded?: boolean
   onExpandedChange?: (expanded: boolean) => void
+  spotlight?: VersionBPreviewState
 }
 
 /** au.seek.com home — More options reveals fixed filter pills (no personalised chips) */
@@ -18,6 +20,7 @@ export function HomeMoreOptionsRow({
   className,
   expanded: expandedProp,
   onExpandedChange,
+  spotlight,
 }: HomeMoreOptionsRowProps) {
   const [internalExpanded, setInternalExpanded] = useState(false)
   const expanded = expandedProp ?? internalExpanded
@@ -49,6 +52,7 @@ export function HomeMoreOptionsRow({
         <nav
           id={pillsId}
           aria-label="Refine your search"
+          data-vb-spotlight={spotlight}
           className="flex min-w-0 flex-1 flex-wrap items-center gap-3"
         >
           <VersionBFixedFilterPills filterState={filterState} />
