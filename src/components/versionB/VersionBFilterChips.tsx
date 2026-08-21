@@ -29,9 +29,12 @@ const appChipTheme = {
   textInactive: "text-[#2E3849] hover:bg-[#F7F8FB] focus-visible:ring-[#1E47A9] focus-visible:ring-offset-2",
 } as const
 
-function skipChipEntranceForPreview(preview: VersionBPreviewState): boolean {
+function skipChipEntranceForPreview(
+  preview: VersionBPreviewState,
+  platform: VersionBPlatform,
+): boolean {
+  if (platform === "app") return true
   if (preview === "scrolled") return true
-  if (preview === "onboarding" || preview === "blank") return false
   return !consumeVersionBHomeMoreOptions()
 }
 
@@ -221,22 +224,35 @@ function FilterChipRow({
   compactNavy?: boolean
 }) {
   const rowClass = cn(
-    "flex min-w-0 flex-wrap items-center gap-3 overflow-visible",
+    "flex min-w-0 items-center gap-3",
+    compactNavy
+      ? "flex-nowrap overflow-x-auto hide-scrollbar filter-scroll-fade-right -mx-5 scroll-px-5 px-5"
+      : "flex-wrap overflow-visible",
     compactNavy && "gap-2",
     className,
   )
 
-  if (skipMotion) {
+  const rowContent = (
+    <>
+      <AnimatedPersonalisedFilters
+        skipEntrance={skipMotion}
+        compactNavy={compactNavy}
+        onEntranceComplete={onChipEntranceComplete}
+      >
+        {personalised}
+      </AnimatedPersonalisedFilters>
+      {trailing}
+      {compactNavy ? <span className="w-5 shrink-0" aria-hidden /> : null}
+    </>
+  )
+
+  if (compactNavy || skipMotion) {
     return (
-      <div className={rowClass}>
-        <AnimatedPersonalisedFilters
-          skipEntrance
-          compactNavy={compactNavy}
-          onEntranceComplete={onChipEntranceComplete}
-        >
-          {personalised}
-        </AnimatedPersonalisedFilters>
-        {trailing}
+      <div
+        className={rowClass}
+        style={compactNavy ? { WebkitOverflowScrolling: "touch" } : undefined}
+      >
+        {rowContent}
       </div>
     )
   }
@@ -277,12 +293,12 @@ export function VersionBFilterChips({
   const ntyLabel = mobileWeb ? "New" : "New to you"
   const appliedCount = countModalFilters(filters)
   const [skipHomeEntrance, setSkipHomeEntrance] = useState(() =>
-    skipChipEntranceForPreview(previewState),
+    skipChipEntranceForPreview(previewState, platform),
   )
 
   useEffect(() => {
-    setSkipHomeEntrance(skipChipEntranceForPreview(previewState))
-  }, [previewState])
+    setSkipHomeEntrance(skipChipEntranceForPreview(previewState, platform))
+  }, [previewState, platform])
 
   const skipMotion =
     skipHomeEntrance ||
