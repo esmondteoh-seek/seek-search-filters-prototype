@@ -31,6 +31,7 @@ const appChipTheme = {
 
 function skipChipEntranceForPreview(preview: VersionBPreviewState): boolean {
   if (preview === "scrolled") return true
+  if (preview === "onboarding" || preview === "blank") return false
   return !consumeVersionBHomeMoreOptions()
 }
 
@@ -275,7 +276,14 @@ export function VersionBFilterChips({
   const compactNavy = mobileWeb && layout === "inline"
   const ntyLabel = mobileWeb ? "New" : "New to you"
   const appliedCount = countModalFilters(filters)
-  const skipHomeEntrance = useState(() => skipChipEntranceForPreview(previewState))[0]
+  const [skipHomeEntrance, setSkipHomeEntrance] = useState(() =>
+    skipChipEntranceForPreview(previewState),
+  )
+
+  useEffect(() => {
+    setSkipHomeEntrance(skipChipEntranceForPreview(previewState))
+  }, [previewState])
+
   const skipMotion =
     skipHomeEntrance ||
     previewState === "scrolled" ||

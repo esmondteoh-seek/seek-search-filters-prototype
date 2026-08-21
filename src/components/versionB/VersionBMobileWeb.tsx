@@ -29,7 +29,7 @@ export function VersionBMobileWeb({ filterState, previewState }: VersionBMobileW
 
   return (
     <PhoneFrame className="bg-white">
-      <header className="flex shrink-0 items-center justify-between border-b border-[#EAECF1] bg-white px-5 py-3">
+      <header className="flex shrink-0 items-center justify-between border-b border-[#EAECF1] bg-white px-4 py-3">
         <button
           type="button"
           onClick={() => navigateToHome()}

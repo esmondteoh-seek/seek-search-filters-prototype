@@ -11,7 +11,7 @@ import { createPortal } from "react-dom"
 /** Figma color/background/info — distinct from navy band */
 const TOOLTIP_BG = "#1D559D"
 const TOOLTIP_MAX_WIDTH = 330
-const VIEWPORT_PADDING = 8
+const FRAME_PADDING = 16
 
 interface VersionBFilterOnboardingTooltipProps {
   children: ReactNode
@@ -21,19 +21,42 @@ interface VersionBFilterOnboardingTooltipProps {
   previewState?: VersionBPreviewState
 }
 
+function findPhoneFrame(anchor: HTMLElement | null): HTMLElement | null {
+  return anchor?.closest("[data-phone-frame]") ?? null
+}
+
 function useTooltipPosition(
   open: boolean,
   anchorRef: React.RefObject<HTMLElement | null>,
 ) {
-  const [position, setPosition] = useState({ top: 0, left: 0, caretLeft: 24 })
+  const [position, setPosition] = useState({
+    top: 0,
+    left: 0,
+    caretLeft: 24,
+    contained: false,
+    maxWidth: TOOLTIP_MAX_WIDTH,
+  })
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
     if (!open || !anchorRef.current) return
 
     const update = () => {
-      const rect = anchorRef.current!.getBoundingClientRect()
-      let bandBottom = 0
-      let el: HTMLElement | null = anchorRef.current
+      const anchor = anchorRef.current!
+      const rect = anchor.getBoundingClientRect()
+      const frame = findPhoneFrame(anchor)
+      const contained = Boolean(frame)
+      const bounds = frame
+        ? frame.getBoundingClientRect()
+        : {
+            top: 0,
+            left: 0,
+            right: window.innerWidth,
+            bottom: window.innerHeight,
+          }
+
+      let bandBottom = bounds.top
+      let el: HTMLElement | null = anchor
       while (el) {
         if (el.tagName === "SECTION") {
           bandBottom = el.getBoundingClientRect().bottom
@@ -41,11 +64,25 @@ function useTooltipPosition(
         }
         el = el.parentElement
       }
-      const top = Math.max(rect.bottom + 8, bandBottom + 12)
-      const maxLeft = window.innerWidth - TOOLTIP_MAX_WIDTH - VIEWPORT_PADDING
-      const left = Math.max(VIEWPORT_PADDING, Math.min(rect.left, maxLeft))
-      const caretLeft = Math.max(16, Math.min(rect.left - left + 24, TOOLTIP_MAX_WIDTH - 32))
-      setPosition({ top, left, caretLeft })
+
+      const topViewport = Math.max(rect.bottom + 8, bandBottom + 12)
+      const boundsWidth = bounds.right - bounds.left
+      const maxWidth = Math.min(TOOLTIP_MAX_WIDTH, boundsWidth - FRAME_PADDING * 2)
+      const maxLeftViewport = bounds.right - maxWidth - FRAME_PADDING
+      const leftViewport = Math.max(
+        bounds.left + FRAME_PADDING,
+        Math.min(rect.left, maxLeftViewport),
+      )
+      const caretLeft = Math.max(16, Math.min(rect.left - leftViewport + 24, maxWidth - 32))
+
+      setPortalTarget(contained ? frame : document.body)
+      setPosition({
+        top: contained ? topViewport - bounds.top : topViewport,
+        left: contained ? leftViewport - bounds.left : leftViewport,
+        caretLeft,
+        contained,
+        maxWidth,
+      })
     }
 
     update()
@@ -57,31 +94,49 @@ function useTooltipPosition(
     }
   }, [open, anchorRef])
 
-  return position
+  return { ...position, portalTarget }
 }
 
 function FilterTooltipBubble({
   open,
   position,
+  portalTarget,
   onDismiss,
   showDismiss,
 }: {
   open: boolean
-  position: { top: number; left: number; caretLeft: number }
+  position: {
+    top: number
+    left: number
+    caretLeft: number
+    contained: boolean
+    maxWidth: number
+  }
+  portalTarget: HTMLElement | null
   onDismiss?: () => void
   showDismiss?: boolean
 }) {
   const reduceMotion = useReducedMotion()
   const { mounted, visible, durationMs } = useMountTransition(open, 350)
 
-  if (!mounted) return null
+  if (!mounted || !portalTarget) return null
 
   return createPortal(
     <motion.div
       role="status"
       aria-live="polite"
-      className="fixed z-[120] w-max max-w-[min(calc(100vw-1rem),330px)] drop-shadow-[0_4px_4px_rgba(46,56,73,0.25)]"
-      style={{ top: position.top, left: position.left }}
+      className={cn(
+        position.contained ? "absolute" : "fixed",
+        "z-[120] w-max drop-shadow-[0_4px_4px_rgba(46,56,73,0.25)]",
+        position.contained
+          ? "max-w-[calc(100%-2rem)]"
+          : "max-w-[min(calc(100vw-2rem),330px)]",
+      )}
+      style={{
+        top: position.top,
+        left: position.left,
+        maxWidth: position.maxWidth,
+      }}
       initial={reduceMotion ? false : { opacity: 0 }}
       animate={{ opacity: visible ? 1 : 0 }}
       transition={{ duration: reduceMotion ? 0 : durationMs / 1000, ease: motionTokens.ease.out }}
@@ -130,7 +185,7 @@ function FilterTooltipBubble({
         ) : null}
       </div>
     </motion.div>,
-    document.body,
+    portalTarget,
   )
 }
 
@@ -146,7 +201,7 @@ export function VersionBFilterOnboardingTooltip({
   const [onboardingVisible, setOnboardingVisible] = useState(false)
 
   const forceOnboarding = previewState === "onboarding"
-  const ready = chipsReady || forceOnboarding
+  const ready = chipsReady
 
   useEffect(() => {
     if (!enabled || !ready) {
@@ -162,7 +217,7 @@ export function VersionBFilterOnboardingTooltip({
   }
 
   const showOnboardingBubble = enabled && onboardingVisible
-  const position = useTooltipPosition(showOnboardingBubble, anchorRef)
+  const { portalTarget, ...position } = useTooltipPosition(showOnboardingBubble, anchorRef)
 
   return (
     <div ref={anchorRef} className="relative shrink-0">
@@ -170,6 +225,7 @@ export function VersionBFilterOnboardingTooltip({
       <FilterTooltipBubble
         open={showOnboardingBubble}
         position={position}
+        portalTarget={portalTarget}
         onDismiss={handleDismiss}
         showDismiss
       />
